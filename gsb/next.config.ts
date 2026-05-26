@@ -1,8 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-   allowedDevOrigins: ['192.168.1.236']
-};
+  allowedDevOrigins: ['192.168.1.236'],
+  output: 'export',
+  images: {
+    unoptimized: true,
+  },
+
+    experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
+  },
+}
 
 export default nextConfig;

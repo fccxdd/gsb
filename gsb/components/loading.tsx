@@ -1,28 +1,13 @@
-// components/Loading.tsx
+// components/loading.tsx
+"use client";
 
-"use client"
+import { useState } from "react";
+import SplashScreen from "@/components/SplashScreen";
 
-import React, { useEffect, useState } from 'react';
-import { FaSpinner } from "react-icons/fa";
-import { GameConfig } from '@/lib/gameConfig';
+export default function Loading() {
+  const [done, setDone] = useState(false);
 
-const Loading = () => {
-  const [isLoading, setIsLoading] = useState(true);
+  if (done) return null;
 
-  useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, GameConfig.duration.loadingDelay);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <div className={`loading-screen ${isLoading ? 'fade-in' : 'fade-out'}`}>
-      <div className="spinner-icon"><FaSpinner/></div>
-    </div>
-  );
-};
-
-export default Loading;
+  return <SplashScreen onDone={() => setDone(true)} />;
+}
