@@ -1,22 +1,11 @@
+// components/PuzzleGrid.tsx
 "use client";
 
 import Image from "next/image";
-import { useRef, useEffect } from "react";
+import { useEffect } from "react";
 import { GameConfig } from "../lib/gameConfig";
-import { todaysPuzzle } from "@/lib/puzzleMetadata";
-
-const logos = todaysPuzzle.companies.map((c) => ({
-  id: c.id,
-  src: c.logoSrc,
-  alt: c.name,
-}));
-
-const correctPositionByRank: Record<number, number> = {
-  1: 0,
-  2: 1,
-  3: 2,
-  4: 3,
-};
+import { useTileAnimation } from "@/hooks/useTileAnimation";
+import type { Company } from "@/types";
 
 const rankColors: Record<number, string> = {
   1: GameConfig.puzzleBackgroundColors.gold,
@@ -26,95 +15,72 @@ const rankColors: Record<number, string> = {
 };
 
 interface PuzzleGridProps {
+  companies: Company[];
   orderedIds: number[];
   setOrderedIds: React.Dispatch<React.SetStateAction<number[]>>;
   incorrectIds: number[];
   correctIds: number[];
+  snapIds: number[];
   isSubmitting: boolean;
   revealCorrect: boolean;
   lockedPositions: Record<number, number>;
   revealedRanks: number[];
+  clearStylesRef: React.MutableRefObject<((ids: number[]) => void) | null>;
 }
 
 export default function PuzzleGrid({
+  companies,
   orderedIds,
   setOrderedIds,
   incorrectIds,
   correctIds,
+  snapIds,
   isSubmitting,
-  revealCorrect,
   lockedPositions,
   revealedRanks,
+  clearStylesRef,
 }: PuzzleGridProps) {
 
-  const tileRefs = useRef<Record<number, HTMLButtonElement | null>>({});
-  const prevPositions = useRef<Record<number, DOMRect>>({});
-  const lockedCount = correctIds.length;
-  const nextAvailableRank = lockedCount + 1;
-  
-  // FLIP: record positions before re-render
-  useEffect(() => {
-    if (revealCorrect) {
-      logos.forEach((logo) => {
-        const el = tileRefs.current[logo.id];
-        if (el) prevPositions.current[logo.id] = el.getBoundingClientRect();
-      });
-    }
-  }, [revealCorrect]);
-
-  // FLIP: after re-render, animate from old to new positions
-  useEffect(() => {
-    if (!revealCorrect) return;
-
-    let delay = 0;
-
-    logos.forEach((logo) => {
-      const el = tileRefs.current[logo.id];
-      const prev = prevPositions.current[logo.id];
-      if (!el || !prev) return;
-
-      if (correctIds.length > 0 && !correctIds.includes(logo.id)) return;
-
-      const next = el.getBoundingClientRect();
-      const dx = prev.left - next.left;
-      const dy = prev.top - next.top;
-
-      if (dx === 0 && dy === 0) return;
-
-      const myDelay = delay;
-      delay += 1200;
-
-      el.style.transition = "none";
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          el.style.transition = `transform 1s cubic-bezier(0.4, 0, 0.2, 1) ${myDelay}ms`;
-          el.style.transform = "translate(0, 0)";
-        });
-      });
-    });
-  }, [revealCorrect, correctIds]);
+  const logos = companies.map((c) => ({
+    id: c.id,
+    src: c.logoSrc,
+    alt: c.name,
+  }));
 
   const displayOrder = (() => {
-    const result: typeof logos = new Array(4).fill(null);
+    const result: (typeof logos[0] | null)[] = new Array(4).fill(null);
 
     logos.forEach((logo) => {
-      if (lockedPositions[logo.id] !== undefined) {
+      if (snapIds.includes(logo.id) && lockedPositions[logo.id] !== undefined) {
         result[lockedPositions[logo.id]] = logo;
       }
     });
 
-    const unlocked = logos.filter((logo) => lockedPositions[logo.id] === undefined);
-    let unlockedIndex = 0;
+    const unsnapped = logos.filter((logo) => !snapIds.includes(logo.id));
+    let unsnappedIndex = 0;
     for (let i = 0; i < 4; i++) {
-      if (!result[i]) {
-        result[i] = unlocked[unlockedIndex++];
+      if (!result[i] && unsnapped[unsnappedIndex]) {
+        result[i] = unsnapped[unsnappedIndex++];
       }
     }
 
-    return result;
+    return result as typeof logos;
   })();
+
+  const { tileRefs, clearStyles } = useTileAnimation(correctIds, displayOrder, companies);
+
+  useEffect(() => {
+    clearStylesRef.current = clearStyles;
+  });
+
+  const unlockedCount = 4 - snapIds.length;
+
+  const lockedRanks = snapIds.map(
+    (id) => companies.find((c) => c.id === id)!.correctRank
+  );
+  const availableRanks = ([1, 2, 3, 4] as const).filter(
+    (r) => !lockedRanks.includes(r)
+  );
 
   function handleClick(id: number) {
     if (isSubmitting) return;
@@ -122,13 +88,15 @@ export default function PuzzleGrid({
 
     if (existingIndex !== -1) {
       const next = orderedIds.filter((_, i) => i !== existingIndex);
-      if (next.length === 3 && orderedIds.length === 4) next.pop();
+      if (next.length === unlockedCount - 1 && orderedIds.length === unlockedCount) next.pop();
       setOrderedIds(next);
     } else {
-      if (orderedIds.length >= 4) return;
+      if (orderedIds.length >= unlockedCount) return;
       const next = [...orderedIds, id];
-      if (next.length === 3) {
-        const lastId = logos.find((l) => !next.includes(l.id))!.id;
+      if (next.length === unlockedCount - 1) {
+        const lastId = logos.find(
+          (l) => !next.includes(l.id) && !snapIds.includes(l.id) && !correctIds.includes(l.id)
+        )!.id;
         next.push(lastId);
       }
       setOrderedIds(next);
@@ -136,44 +104,46 @@ export default function PuzzleGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 border border-zinc-200">
+    <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-2xl p-2">
       {displayOrder.map((logo) => {
         const rank = orderedIds.indexOf(logo.id);
-        const isAutoFourth = rank === 3;
+        const isAutoFourth = rank === unlockedCount - 1;
         const isIncorrect = incorrectIds.includes(logo.id);
-        const isLocked = correctIds.includes(logo.id);
-        const company = todaysPuzzle.companies.find((c) => c.id === logo.id)!;
+        const isLocked = snapIds.includes(logo.id);
+        const isAnimating = correctIds.includes(logo.id) && !snapIds.includes(logo.id);
+        const company = companies.find((c) => c.id === logo.id)!;
         const isRevealed = revealedRanks.includes(company.correctRank);
-        
-        // locked tiles always use correctRank color, others use player selection
+
         const bg = isLocked
           ? rankColors[company.correctRank]
           : rank !== -1
-          ? rankColors[nextAvailableRank + rank]
+          ? rankColors[availableRanks[rank]]
           : "bg-white";
 
         return (
           <button
             key={logo.id}
             ref={(el) => { tileRefs.current[logo.id] = el; }}
-            onClick={() => !isAutoFourth && !isLocked && handleClick(logo.id)}
-            disabled={isAutoFourth || isSubmitting || isLocked}
+            onClick={() => handleClick(logo.id)}
+            disabled={isAutoFourth || isSubmitting || isLocked || isAnimating}
             className={`
               relative overflow-hidden
               w-[160px] h-[160px] sm:w-[200px] sm:h-[200px]
-              border border-zinc-200 flex items-center justify-center
+              rounded-2xl border border-zinc-200 flex items-center justify-center
               transition-colors duration-500
               ${bg}
-              ${!isAutoFourth && !isSubmitting && !isLocked ? "cursor-pointer" : "cursor-default"}
+              ${!isAutoFourth && !isSubmitting && !isLocked && !isAnimating ? "cursor-pointer" : "cursor-default"}
               ${isIncorrect ? "opacity-50 shake" : "opacity-100"}
             `}
           >
-            {/* inner logo box — slides left on reveal */}
             <div
+              style={{
+                transitionDuration: `${GameConfig.duration.revenueLogoSlide}ms`,
+              }}
               className={`
                 absolute flex items-center justify-center
                 w-[80px] h-[80px] sm:w-[100px] sm:h-[100px]
-                transition-all duration-700 ease-in-out
+                transition-all ease-in-out
                 ${isRevealed ? "-translate-x-4 sm:-translate-x-8" : "translate-x-0"}
               `}
             >
@@ -182,11 +152,14 @@ export default function PuzzleGrid({
               </div>
             </div>
 
-            {/* revenue — fades in on the right */}
             <div
+              style={{
+                transitionDuration: `${GameConfig.duration.revenueFadeIn}ms`,
+                transitionDelay: isRevealed ? `${GameConfig.duration.revenueFadeDelay}ms` : "0ms",
+              }}
               className={`
                 absolute right-2 sm:right-4 flex flex-col items-end
-                transition-opacity duration-700 ease-in-out delay-300
+                transition-opacity ease-in-out
                 ${isRevealed ? "opacity-100" : "opacity-0"}
               `}
             >

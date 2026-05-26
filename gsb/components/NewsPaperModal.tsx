@@ -5,7 +5,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { IoChevronBack, IoChevronForward, IoClose } from "react-icons/io5";
-import { Company } from "@/lib/puzzleMetadata";
+import { Company } from "@/types";
 
 interface NewspaperModalProps {
   isOpen: boolean;
