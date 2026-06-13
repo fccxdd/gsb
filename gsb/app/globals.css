@@ -40,3 +40,28 @@ h1, h2, h3, h4, h5, h6 {
 .shake {
   animation: shake 0.5s ease;
 }
+
+/* Shine Animation - End of Game */
+.medal-shine-overlay {
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.75),
+    transparent
+  );
+  transform: translateX(-100%) skewX(-20deg);
+  opacity: 0;
+  pointer-events: none;
+  animation: medalShine 4s ease-in-out infinite;
+}
+
+@keyframes medalShine {
+  0%   { transform: translateX(280%) skewX(-20deg); opacity: 0; }
+  10%  { opacity: 0.6; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
+}

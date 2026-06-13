@@ -8,12 +8,12 @@ export default async function ArchivePage() {
   const puzzles = await getArchivePuzzles(today)
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 px-6 py-12 max-w-2xl mx-auto">
+    <main className="min-h-screen bg-white px-6 py-12 max-w-2xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-serif text-4xl font-bold text-slate-900 dark:text-slate-100 tracking-tight mb-1">
-          The Archive
+        <h1 className="font-serif text-4xl font-bold text-black tracking-tight mb-1">
+          The GSB Archive
         </h1>
-        <p className="text-[11px] font-mono tracking-[0.12em] uppercase text-slate-400 dark:text-slate-500">
+        <p className="text-[11px] font-mono tracking-[0.12em] uppercase text-slate-500">
           Mon · Wed · Fri
         </p>
       </div>

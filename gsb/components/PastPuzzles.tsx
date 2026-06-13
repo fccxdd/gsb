@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArchivePuzzle as Puzzle } from '@/lib/archiveSanity'
 import { MedalStatus } from '@/lib/PuzzleResults'
+import { GameConfig } from '@/lib/gameConfig'
 
 interface PuzzleCircleProps {
   puzzle: Puzzle
@@ -8,101 +9,106 @@ interface PuzzleCircleProps {
   isToday: boolean
 }
 
-const MEDAL_COLORS: Record<MedalStatus, { outer: string; inner: string; text: string }> = {
-  gold:     { outer: 'bg-amber-400',                        inner: 'bg-amber-500',                        text: 'text-amber-900' },
-  silver:   { outer: 'bg-slate-300',                        inner: 'bg-slate-400',                        text: 'text-slate-700' },
-  bronze:   { outer: 'bg-amber-700',                        inner: 'bg-amber-800',                        text: 'text-amber-100' },
-  unsolved: { outer: 'bg-slate-100 dark:bg-slate-800',      inner: 'bg-slate-200 dark:bg-slate-700',      text: 'text-slate-400' },
-  active:   { outer: 'bg-white dark:bg-slate-900',          inner: 'bg-slate-100 dark:bg-slate-800',      text: 'text-slate-400' },
+const MEDAL_COLORS: Record<string, { outer: string; inner: string }> = {
+  gold:   { outer: GameConfig.puzzleBackgroundColors.gold,   inner: GameConfig.puzzleBackgroundColors.inner_gold },
+  silver: { outer: GameConfig.puzzleBackgroundColors.silver, inner: GameConfig.puzzleBackgroundColors.inner_silver },
+  bronze: { outer: GameConfig.puzzleBackgroundColors.bronze, inner: GameConfig.puzzleBackgroundColors.inner_bronze },
 }
 
-function Ribbon() {
+function Ribbon({ faded = false }: { faded?: boolean }) {
   return (
-    <div className="flex items-end justify-center w-full mb-[-10px] relative z-10 h-[52px]">
+    <div className={`flex items-end justify-center w-full relative z-0 h-[58px] ${faded ? 'opacity-30' : ''}`} style={{ marginBottom: '-33px' }}>
       <div
-        className="relative w-[28px] h-[52px] rounded-sm overflow-hidden bg-[#4A67D4]"
-        style={{ transform: 'rotate(-18deg)', transformOrigin: 'bottom right', marginRight: '4px' }}
+        className="relative overflow-hidden bg-[#4C4CDB]"
+        style={{
+          width: '35px',
+          height: '58px',
+          transform: 'rotate(-29deg)',
+          transformOrigin: 'bottom center',
+          marginRight: '-13px',
+        }}
       >
-        <div className="absolute top-0 bottom-0 w-[7px] bg-[#9BAAE8]" style={{ left: '50%', transform: 'translateX(-50%)' }} />
+        <div className="absolute top-0 bottom-0 bg-[#7386FF]" style={{ left: '50%', transform: 'translateX(-50%)', width: '12px' }} />
       </div>
       <div
-        className="relative w-[28px] h-[52px] rounded-sm overflow-hidden bg-[#4A67D4]"
-        style={{ transform: 'rotate(18deg)', transformOrigin: 'bottom left', marginLeft: '4px' }}
+        className="relative overflow-hidden bg-[#4C4CDB]"
+        style={{
+          width: '35px',
+          height: '58px',
+          transform: 'rotate(29deg)',
+          transformOrigin: 'bottom center',
+          marginLeft: '-13px',
+        }}
       >
-        <div className="absolute top-0 bottom-0 w-[7px] bg-[#9BAAE8]" style={{ left: '50%', transform: 'translateX(-50%)' }} />
+        <div className="absolute top-0 bottom-0 bg-[#7386FF]" style={{ left: '50%', transform: 'translateX(-50%)', width: '12px' }} />
       </div>
     </div>
   )
 }
 
-// Derive a display number from the date for the circle label
-function puzzleLabel(date: string): string {
-  // You can replace this with a real puzzle number if you add it to the Sanity query
-  return date.slice(5) // e.g. "05-05"
+function formatDateLabel(date: string): string {
+  const parts = date.split('-')
+  return `${parts[1]}/${parts[2]}`
 }
 
 export function PastPuzzle({ puzzle, status, isToday }: PuzzleCircleProps) {
-  const { date, fiscalYear } = puzzle
+  const { date } = puzzle
   const isSolved = ['gold', 'silver', 'bronze'].includes(status)
-  const colors = MEDAL_COLORS[status]
+  const isFuture = status === 'active'
+  const isUnsolved = status === 'unsolved'
+  const dateLabel = formatDateLabel(date)
+  const colors = MEDAL_COLORS[status] ?? MEDAL_COLORS['bronze']
 
-  const circleContent = (
-    <div className="flex flex-col items-center">
-      {isSolved ? <Ribbon /> : <div className="h-[52px] mb-[-10px]" />}
+  console.log(date, status, isSolved, isFuture, isUnsolved)
+  const inner = (
+    <div className="flex flex-col items-center w-[100px]">
+      {/* Ribbon */}
+      {(isSolved || isFuture) && <Ribbon faded={isFuture} />}
+      {isUnsolved && <div className="h-[65px] mb-[-20px]" />}
 
       {/* Outer ring */}
-      <div
-        className={`
-          w-[72px] h-[72px] rounded-full flex items-center justify-center
-          transition-transform duration-150 hover:scale-105
-          ${colors.outer}
-          ${!isSolved ? 'border-2 border-dashed border-slate-300 dark:border-slate-600' : ''}
-        `}
-      >
-        {/* Inner disc */}
-        <div className={`w-[54px] h-[54px] rounded-full flex flex-col items-center justify-center ${colors.inner}`}>
-          {isSolved && (
-            <span className={`font-serif text-[15px] font-bold leading-none ${colors.text}`}>
-              {puzzleLabel(date)}
-            </span>
-          )}
-          {isToday && (
-            <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase">play</span>
-          )}
-          {status === 'unsolved' && (
-            <span className="text-slate-400 text-sm">✗</span>
-          )}
-        </div>
+      <div className={`relative z-10 w-[72px] h-[72px] rounded-full flex items-center justify-center transition-transform duration-150 hover:scale-105
+        ${isSolved ? colors.outer : ''}
+        ${isFuture ? `${colors.outer} opacity-30` : ''}
+        ${isUnsolved ? 'bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700' : ''}
+      `}>
+
+        {/* Inner disc — solved */}
+        {isSolved && (
+          <div className={`w-[56px] h-[56px] rounded-full ${colors.inner}`} />
+        )}
+
+        {/* Inner disc — future with ? */}
+        {isFuture && (
+          <div className={`w-[56px] h-[56px] rounded-full ${colors.inner} flex items-center justify-center`}>
+            <span className="text-[#4A67D4] text-xl font-bold">?</span>
+          </div>
+        )}
+
+        {/* Unsolved ? */}
+        {isUnsolved && (
+          <span className="text-[#4A67D4] text-xl font-bold">?</span>
+        )}
       </div>
 
-      {/* Fiscal year */}
-      <span className={`mt-2 text-[11px] font-mono tracking-tight ${isToday ? 'text-blue-500 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
-        {fiscalYear}
-        {isToday && (
-          <span className="ml-1.5 text-[9px] bg-blue-50 dark:bg-blue-950 text-blue-500 px-1.5 py-0.5 rounded-full">
-            today
-          </span>
-        )}
+      {/* Date label */}
+      <span className={`mt-2 text-[11px] font-mono tracking-tight
+        ${isToday ? 'text-[#4A67D4] font-semibold' : ''}
+        ${isFuture ? 'text-slate-300 dark:text-slate-600' : ''}
+        ${!isToday && !isFuture ? 'text-slate-400 dark:text-slate-500' : ''}
+      `}>
+        {dateLabel}
       </span>
-
-      {isToday && (
-        <Link
-          href={`/puzzle/${date}`}
-          className="mt-1 text-[11px] font-mono tracking-widest uppercase bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-3 py-1.5 rounded hover:opacity-75 transition-opacity"
-        >
-          Play ↗
-        </Link>
-      )}
     </div>
   )
 
-  if (isSolved) {
+  if (isSolved || isUnsolved) {
     return (
-      <Link href={`/puzzle/${date}`} className="block cursor-pointer">
-        {circleContent}
+      <Link href="/" className="block cursor-pointer">
+        {inner}
       </Link>
     )
   }
 
-  return <div>{circleContent}</div>
+  return <div>{inner}</div>
 }

@@ -1,3 +1,5 @@
+// hooks/useTileAnimation.tsx
+
 import { useEffect, useRef } from "react";
 import { GameConfig } from "@/lib/gameConfig";
 import type { Company } from "@/types";
@@ -13,6 +15,7 @@ export function useTileAnimation(
   correctIds: number[],
   displayOrder: { id: number }[],
   companies: Company[],
+  resolvedSlots?: Record<number, number>, // final slot for every non-snapped tile after swaps
 ) {
   const tileRefs = useRef<Record<number, HTMLButtonElement | null>>({});
   const animatedIds = useRef<Set<number>>(new Set());
@@ -39,23 +42,62 @@ export function useTileAnimation(
     const timeouts: ReturnType<typeof setTimeout>[] = [];
     const GAP = 16;
 
-    const moves = companies
-      .filter((c) => newIds.includes(c.id))
-      .map((c) => {
-        const currentSlot = snapshot.findIndex((l) => l.id === c.id);
-        const targetSlot = correctPositionByRank[c.correctRank];
-        if (currentSlot === -1 || currentSlot === targetSlot) return null;
+    // Build the full set of moves using resolvedSlots if available,
+    // otherwise fall back to the original single-correct-tile logic.
+    let moves: { id: number; currentSlot: number; targetSlot: number; dx: number; dy: number }[] = [];
+
+    if (resolvedSlots) {
+      // resolvedSlots tells us exactly where every tile ends up.
+      // Animate every tile that needs to move (correct tiles + any displaced wrong tiles).
+      snapshot.forEach((entry, currentSlot) => {
+        const targetSlot = resolvedSlots[entry.id];
+        if (targetSlot === undefined || targetSlot === currentSlot) return;
 
         const colDiff = (targetSlot % 2) - (currentSlot % 2);
         const rowDiff = Math.floor(targetSlot / 2) - Math.floor(currentSlot / 2);
 
-        return {
-          id: c.id,
+        moves.push({
+          id: entry.id,
+          currentSlot,
+          targetSlot,
           dx: colDiff * (tileSize + GAP),
           dy: rowDiff * (tileSize + GAP),
-        };
-      })
-      .filter(Boolean) as { id: number; dx: number; dy: number }[];
+        });
+      });
+    } else {
+      // Original logic for win path (all correct at once)
+      const correctMoves = companies
+        .filter((c) => newIds.includes(c.id))
+        .map((c) => {
+          const currentSlot = snapshot.findIndex((l) => l.id === c.id);
+          const targetSlot = correctPositionByRank[c.correctRank];
+          if (currentSlot === -1 || currentSlot === targetSlot) return null;
+
+          const colDiff = (targetSlot % 2) - (currentSlot % 2);
+          const rowDiff = Math.floor(targetSlot / 2) - Math.floor(currentSlot / 2);
+
+          return { id: c.id, currentSlot, targetSlot,
+            dx: colDiff * (tileSize + GAP), dy: rowDiff * (tileSize + GAP) };
+        })
+        .filter(Boolean) as typeof moves;
+
+      const correctIds_set = new Set(newIds);
+      const displacedMoves = correctMoves
+        .map((move) => {
+          const displaced = snapshot[move.targetSlot];
+          if (!displaced) return null;
+          if (correctIds_set.has(displaced.id)) return null;
+
+          const colDiff = (move.currentSlot % 2) - (move.targetSlot % 2);
+          const rowDiff = Math.floor(move.currentSlot / 2) - Math.floor(move.targetSlot / 2);
+
+          return { id: displaced.id, currentSlot: move.targetSlot, targetSlot: move.currentSlot,
+            dx: colDiff * (tileSize + GAP), dy: rowDiff * (tileSize + GAP) };
+        })
+        .filter(Boolean) as typeof moves;
+
+      moves = [...correctMoves, ...displacedMoves];
+    }
 
     newIds.forEach((id) => animatedIds.current.add(id));
 

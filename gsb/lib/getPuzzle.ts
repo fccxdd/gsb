@@ -1,4 +1,7 @@
+// lib/getPuzzle.ts
+
 import { client } from './sanity'
+import { getPuzzleNumber } from './getPuzzleNumber'
 
 interface SanityCompany {
   _key: string
@@ -35,7 +38,8 @@ export async function getTodaysPuzzle() {
 
   return {
     date: raw.date,
-    fiscalYear: raw.fiscalYear,
+    number: getPuzzleNumber(raw.date),
+    fiscalYear: `FY${raw.fiscalYear}`,
     revenueRange: raw.revenueRange,
     companies: raw.companies.map((c: SanityCompany, index: number) => ({
       id: index,

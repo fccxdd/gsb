@@ -12,6 +12,27 @@ const inriaSerif = Inria_Serif({
 export const metadata: Metadata = {
   title: GameConfig.titleName,
   description: GameConfig.description,
+  openGraph: {
+    title: GameConfig.titleName,
+    description: GameConfig.description,
+    url: GameConfig.url,
+    siteName: "GSB",
+    images: [
+      {
+        url: GameConfig.imageURL,
+        width: 1200,
+        height: 1200,
+        alt: "GSB - Rank by Revenue",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: GameConfig.titleName,
+    description: GameConfig.description,
+    images: [GameConfig.imageURL],
+  },
 };
 
 export default function RootLayout({

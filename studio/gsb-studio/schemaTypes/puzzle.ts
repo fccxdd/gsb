@@ -13,12 +13,12 @@ export default {
     {
       name: 'fiscalYear',
       title: 'Fiscal Year (e.g. 2020)',
-      type: 'string',
-      validation: (Rule: any) => Rule.required()
+      type: 'number',
+      validation: (Rule: any) => Rule.required().min(1900).max(2100).integer()
     },
     {
       name: 'revenueRange',
-      title: 'Revenue Range (e.g. $5b - $11b)',
+      title: 'Revenue Range (e.g. $5B - $11B)',
       type: 'string',
       validation: (Rule: any) => Rule.required()
     },

@@ -1,4 +1,5 @@
 // components/PuzzleGrid.tsx
+
 "use client";
 
 import Image from "next/image";
@@ -16,6 +17,7 @@ const rankColors: Record<number, string> = {
 
 interface PuzzleGridProps {
   companies: Company[];
+  displayOrder: { id: number; src: string; alt: string }[];
   orderedIds: number[];
   setOrderedIds: React.Dispatch<React.SetStateAction<number[]>>;
   incorrectIds: number[];
@@ -26,10 +28,13 @@ interface PuzzleGridProps {
   lockedPositions: Record<number, number>;
   revealedRanks: number[];
   clearStylesRef: React.MutableRefObject<((ids: number[]) => void) | null>;
+  resolvedSlots?: Record<number, number>;
+  hasWon: boolean;
 }
 
 export default function PuzzleGrid({
   companies,
+  displayOrder,
   orderedIds,
   setOrderedIds,
   incorrectIds,
@@ -39,6 +44,8 @@ export default function PuzzleGrid({
   lockedPositions,
   revealedRanks,
   clearStylesRef,
+  resolvedSlots,
+  hasWon
 }: PuzzleGridProps) {
 
   const logos = companies.map((c) => ({
@@ -47,27 +54,7 @@ export default function PuzzleGrid({
     alt: c.name,
   }));
 
-  const displayOrder = (() => {
-    const result: (typeof logos[0] | null)[] = new Array(4).fill(null);
-
-    logos.forEach((logo) => {
-      if (snapIds.includes(logo.id) && lockedPositions[logo.id] !== undefined) {
-        result[lockedPositions[logo.id]] = logo;
-      }
-    });
-
-    const unsnapped = logos.filter((logo) => !snapIds.includes(logo.id));
-    let unsnappedIndex = 0;
-    for (let i = 0; i < 4; i++) {
-      if (!result[i] && unsnapped[unsnappedIndex]) {
-        result[i] = unsnapped[unsnappedIndex++];
-      }
-    }
-
-    return result as typeof logos;
-  })();
-
-  const { tileRefs, clearStyles } = useTileAnimation(correctIds, displayOrder, companies);
+  const { tileRefs, clearStyles } = useTileAnimation(correctIds, displayOrder, companies, resolvedSlots);
 
   useEffect(() => {
     clearStylesRef.current = clearStyles;
@@ -114,7 +101,7 @@ export default function PuzzleGrid({
         const company = companies.find((c) => c.id === logo.id)!;
         const isRevealed = revealedRanks.includes(company.correctRank);
 
-        const bg = isLocked
+        const bg = isLocked || isAnimating
           ? rankColors[company.correctRank]
           : rank !== -1
           ? rankColors[availableRanks[rank]]
@@ -128,7 +115,7 @@ export default function PuzzleGrid({
             disabled={isAutoFourth || isSubmitting || isLocked || isAnimating}
             className={`
               relative overflow-hidden
-              w-[160px] h-[160px] sm:w-[200px] sm:h-[200px]
+              w-[120px] h-[120px] sm:w-[200px] sm:h-[200px]
               rounded-2xl border border-zinc-200 flex items-center justify-center
               transition-colors duration-500
               ${bg}
@@ -136,19 +123,21 @@ export default function PuzzleGrid({
               ${isIncorrect ? "opacity-50 shake" : "opacity-100"}
             `}
           >
-            <div
-              style={{
-                transitionDuration: `${GameConfig.duration.revenueLogoSlide}ms`,
-              }}
-              className={`
-                absolute flex items-center justify-center
-                w-[80px] h-[80px] sm:w-[100px] sm:h-[100px]
-                transition-all ease-in-out
-                ${isRevealed ? "-translate-x-4 sm:-translate-x-8" : "translate-x-0"}
-              `}
-            >
-              <div className="relative w-full h-full">
-                <Image src={logo.src} alt={logo.alt} fill className="object-contain" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                style={{
+                  transitionDuration: `${GameConfig.duration.revenueLogoSlide}ms`,
+                }}
+                className={`
+                  flex items-center justify-center
+                  w-[80px] h-[80px] sm:w-[100px] sm:h-[100px]
+                  transition-transform ease-in-out
+                  ${isRevealed ? "-translate-y-6 sm:-translate-y-8" : "translate-y-0"}
+                `}
+              >
+                <div className="relative w-full h-full">
+                  <Image src={logo.src} alt={logo.alt} fill className="object-contain" />
+                </div>
               </div>
             </div>
 
@@ -158,18 +147,34 @@ export default function PuzzleGrid({
                 transitionDelay: isRevealed ? `${GameConfig.duration.revenueFadeDelay}ms` : "0ms",
               }}
               className={`
-                absolute right-2 sm:right-4 flex flex-col items-end
+                absolute bottom-4 sm:bottom-5 flex flex-col items-center gap-1
                 transition-opacity ease-in-out
                 ${isRevealed ? "opacity-100" : "opacity-0"}
               `}
             >
-              <span className="text-[10px] sm:text-xs font-semibold text-zinc-500 uppercase tracking-wide">
+              <span className="text-[10px] sm:text-xs font-semibold text-black uppercase tracking-wide">
                 Revenue
               </span>
-              <span className="text-sm sm:text-lg font-bold text-zinc-800">
+              <span
+                className="px-3 py-1 rounded-full text-white text-xs sm:text-sm font-semibold"
+                style={{ backgroundColor: "#2F8F22" }}
+              >
                 {company.revenue}
               </span>
             </div>
+
+            {hasWon && isLocked && company.correctRank !== 4 && (
+              <span
+                className="medal-shine-overlay"
+                style={{
+                  animationDelay: `${
+                    (company.correctRank - 1) * GameConfig.duration.revealPerRank +
+                    GameConfig.duration.revenueFadeIn +
+                    GameConfig.duration.revenueFadeDelay
+                  }ms`,
+                }}
+              />
+            )}
           </button>
         );
       })}
