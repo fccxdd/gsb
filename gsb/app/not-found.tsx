@@ -51,7 +51,7 @@ export default function NotFound() {
           textDecoration: "none",
         }}
       >
-        Go home
+        Back to GSB
       </Link>
     </div>
   );

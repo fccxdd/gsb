@@ -1,9 +1,13 @@
 // lib/gameStorage.ts
 
-const STORAGE_KEY = "gsb_game_state";
+import { GameConfig } from "@/lib/gameConfig";
+
+export function storageKey(puzzleDate: string): string {
+  return `${GameConfig.storagePrefix}${puzzleDate}`;
+}
 
 export interface SavedGameState {
-  date: string; // ties the save to today's puzzle
+  date: string; // ties the save to its puzzle
   lives: number;
   gameOver: boolean;
   hasWon: boolean;
@@ -15,15 +19,14 @@ export interface SavedGameState {
 }
 
 export function saveGameState(state: SavedGameState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(storageKey(state.date), JSON.stringify(state));
 }
 
 export function loadGameState(puzzleDate: string): SavedGameState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(storageKey(puzzleDate));
     if (!raw) return null;
     const state: SavedGameState = JSON.parse(raw);
-    // Only restore if it's for today's puzzle
     if (state.date !== puzzleDate) return null;
     return state;
   } catch {
@@ -31,6 +34,6 @@ export function loadGameState(puzzleDate: string): SavedGameState | null {
   }
 }
 
-export function clearGameState() {
-  localStorage.removeItem(STORAGE_KEY);
+export function clearGameState(puzzleDate: string) {
+  localStorage.removeItem(storageKey(puzzleDate));
 }

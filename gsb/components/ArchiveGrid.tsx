@@ -46,7 +46,7 @@ const LEGEND = [
   { color: [GameConfig.puzzleBackgroundColors.gold], label: 'Gold — no lives lost' },
   { color: [GameConfig.puzzleBackgroundColors.silver], label: 'Silver — 2 lives left' },
   { color: [GameConfig.puzzleBackgroundColors.bronze], label: 'Bronze — 1 life left' },
-  { color: [GameConfig.puzzleBackgroundColors.fourth], label: 'Unsolved' },
+  { color: ['bg-[#000000]'], label: 'Unsolved' },
 ]
 
 export function ArchiveGrid({ puzzles, today }: ArchiveGridProps) {
@@ -76,7 +76,7 @@ export function ArchiveGrid({ puzzles, today }: ArchiveGridProps) {
       <div className="flex flex-col gap-8">
         {weeks.map((week, wi) => (
           <div key={wi}>
-            <p className="text-[10px] font-mono tracking-[0.1em] uppercase border-slate-600 mb-4">
+            <p className="text-[10px] text-black font-bold font-mono tracking-[0.1em] uppercase border-slate-600 mb-4">
               Week {wi + 1}
             </p>
             <div className="flex gap-5 flex-wrap">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inria_Serif } from "next/font/google";
 import "./globals.css";
 import { GameConfig } from "../lib/gameConfig";
+import Footer from "@/components/Footer";
 
 const inriaSerif = Inria_Serif({
   variable: "--font-inria-serif",
@@ -45,7 +46,9 @@ export default function RootLayout({
       lang="en"
       className={`${inriaSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">{children}
+      <Footer />
+      </body>
     </html>
   );
 }

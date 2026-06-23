@@ -21,7 +21,7 @@ function formatDate(isoDate: string): string {
   });
 }
 
-function getMedalResult(remainingLives: number, maxLives: number) {
+export function getMedalResult(remainingLives: number, maxLives: number) {
   const livesLost = maxLives - remainingLives;
 
   if (livesLost === 0) return { emoji: "🥇", label: "Gold" };
@@ -91,9 +91,12 @@ export default function ShareButton({
       className="flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-800 text-white text-sm font-medium hover:bg-zinc-700 active:scale-95 transition-all cursor-pointer"
     >
       <span>{copied ? "✓ Copied!" : "Share Result"}</span>
-      {!copied && (
-        <CiShare2 size={14} />
-      )}
+      {!copied 
+      // &&
+      // (
+      //   <CiShare2 size={14} />
+      // )
+      }
     </button>
   );
 }

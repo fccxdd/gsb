@@ -13,6 +13,7 @@ export const GameConfig = {
   puzzleTitle: "GSB",
   puzzleSubtitle: "Rank by revenue - Gold Silver Bronze",
   maxLives: 3,
+  storagePrefix: "gsb_",
   
   // Button Text
   submitText: "Submit",
@@ -46,6 +47,10 @@ export const GameConfig = {
   },
   
   // Game Over Text
+  gameOver: {
+    win: "",
+    loss: "Better luck next time!"
+  },
   
   // Colors
 
