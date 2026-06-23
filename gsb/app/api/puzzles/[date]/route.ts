@@ -11,7 +11,7 @@ export async function generateStaticParams() {
 
 export async function GET(
   request: Request,
-  { params }: { params: { date: string } }
+  { params }: { params: Promise<{ date: string }> }
 ) {
   const { date } = await params
 
