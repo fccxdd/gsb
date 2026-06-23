@@ -12,6 +12,7 @@ export type Company = {
 
 export type Puzzle = {
   date: string;
+  number: string;
   fiscalYear: string;
   revenueRange: string;
   companies: Company[];

@@ -1,7 +1,16 @@
-// lib/getPuzzle.ts
+// app/puzzles/[date]/page.tsx
+import { client } from '@/lib/sanity'
+import { getPuzzleNumber } from '@/lib/getPuzzleNumber'
+import GamePageWrapper from '@/components/GamePageWrapper'
+import SplashScreenNoPuzzle from '@/components/SplashScreenNoPuzzle'
 
-import { client } from './sanity'
-import { getPuzzleNumber } from './getPuzzleNumber'
+import { getArchivePuzzles } from '@/lib/archiveSanity'
+
+export async function generateStaticParams() {
+  const today = new Date().toISOString().slice(0, 10)
+  const puzzles = await getArchivePuzzles(today)
+  return puzzles.map(p => ({ date: p.date }))
+}
 
 interface SanityCompany {
   _key: string
@@ -13,8 +22,8 @@ interface SanityCompany {
   headlines: string[]
 }
 
-export async function getTodaysPuzzle() {
-  const today = new Date().toLocaleDateString('en-CA');
+export default async function PuzzlePage({ params }: { params: Promise<{ date: string }> }) {
+  const { date } = await params
 
   const raw = await client.fetch(
     `*[_type == "puzzle" && date == $date][0]{
@@ -31,12 +40,12 @@ export async function getTodaysPuzzle() {
         headlines
       }
     }`,
-    { date: today }
+    { date }
   )
 
-  if (!raw) return null
+  if (!raw) return <SplashScreenNoPuzzle />
 
-  return {
+  const puzzle = {
     date: raw.date,
     number: getPuzzleNumber(raw.date),
     fiscalYear: `FY${raw.fiscalYear}`,
@@ -51,4 +60,6 @@ export async function getTodaysPuzzle() {
       headlines: c.headlines ?? [],
     }))
   }
+
+  return <GamePageWrapper puzzle={puzzle} />
 }
