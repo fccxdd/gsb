@@ -14,9 +14,14 @@ const config = {
     'bg-[#CD7F32]',
     'bg-[#FFFFFF]',
   ],
-  theme: {
-    extend: {},
+theme: {
+  extend: {
+    fontFamily: {
+      luckiest: ["var(--font-luckiest)", "cursive"],
+      inria: ["var(--font-inria-serif)", "serif"],
+    },
   },
+},
   plugins: [],
 }
 

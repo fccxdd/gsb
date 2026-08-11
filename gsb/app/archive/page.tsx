@@ -1,8 +1,15 @@
+// app/archive/page.tsx
+
 import { getArchivePuzzles } from '@/lib/archiveSanity'
 import { ArchiveGrid } from '@/components/ArchiveGrid'
 import { GameConfig } from '@/lib/gameConfig'
+import { Metadata } from 'next';
 
 export const revalidate = 3600
+
+export const metadata: Metadata = {
+  title: 'GSB | Play Archive',
+};
 
 export default async function ArchivePage() {
   const today = new Date().toISOString().slice(0, 10)
