@@ -17,7 +17,8 @@ function formatDateLabel(date: string): string {
 export function PastPuzzle({ puzzle, status, isToday }: PuzzleCircleProps) {
   const { date } = puzzle
   const isSolved = ['gold', 'silver', 'bronze'].includes(status)
-  const isFuture = status === 'active'
+  const isFourth = status === 'fourth'
+  const isActive = status === 'active'
   const isUnsolved = status === 'unsolved'
   const dateLabel = formatDateLabel(date)
 
@@ -26,10 +27,10 @@ export function PastPuzzle({ puzzle, status, isToday }: PuzzleCircleProps) {
       <Medal status={status} interactive shine={false} />
 
       {/* Date label */}
-      <span className={`mt-2 text-[11px] font-mono tracking-tight
+      <span className={`mt-2 text-[15px] font-lora font-bold italic tracking-tight
         ${isToday ? 'text-[#4A67D4] font-semibold' : ''}
-        ${isFuture ? 'text-slate-300 dark:text-slate-600' : ''}
-        ${!isToday && !isFuture ? 'text-slate-400 dark:text-slate-500' : ''}
+        ${isActive ? 'text-black' : ''}
+        ${!isToday && !isActive ? 'text-black' : ''}
       `}>
         {dateLabel}
       </span>
@@ -44,7 +45,7 @@ export function PastPuzzle({ puzzle, status, isToday }: PuzzleCircleProps) {
     )
   }
 
-  else if (isSolved || (isUnsolved && !isToday)) {
+  else if (isSolved || isFourth || (isUnsolved && !isToday)) {
     return (
       <Link href={`/puzzles/${date}`} className="block cursor-pointer">
         {inner}

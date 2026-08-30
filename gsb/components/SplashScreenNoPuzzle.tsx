@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GameConfig } from "@/lib/gameConfig";
+import { Medal } from "@/components/Medal";
 
 const TILES = [
   { color: GameConfig.puzzleBackgroundHex.gold,   startSlot: 2, endSlot: 0, logo: "/splash/tech.png" },
@@ -37,7 +38,7 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
   const tileRefs = useRef<(HTMLDivElement | null)[]>([null, null, null, null]);
   const [visible, setVisible] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [filledDots, setFilledDots] = useState([false, false]);
+  const [, setFilledDots] = useState([false, false]);
 
   const TILE_SIZE = 120;
   const GAP = 12;
@@ -220,24 +221,22 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
             }}
           >
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
-              {filledDots.map((filled, i) => (
+              {(["gold", "silver", "bronze"] as const).map((tier) => (
                 <div
-                  key={i}
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    backgroundColor: filled ? "#E24B4A" : "#ddd",
-                  }}
-                />
+                  key={tier}
+                  style={{ transform: "scale(0.5)", transformOrigin: "center", margin: "-18px" }}
+                >
+                  <Medal status={tier} shine={false} ribbon={false} />
+                </div>
               ))}
             </div>
 
-            <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>
+            <h2 style={{ fontSize: 30, fontWeight: 600, margin: "0 0 8px" }}>
               No new puzzle today
             </h2>
-            <p style={{ fontSize: 14, color: "#666", margin: "0 0 20px", lineHeight: 1.5 }}>
-              Puzzles are on <strong>M / W / F</strong>.<br />
+            <p style={{ fontSize: 25, color: "#666", margin: "0 0 20px", lineHeight: 1.5 }}>
+              Puzzles are on{" "}
+              <strong style={{ whiteSpace: "nowrap" }}>M / W / F</strong>.<br />
               Play the archive!
             </p>
 
@@ -247,15 +246,15 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
                 width: "100%",
                 padding: "12px 0",
                 borderRadius: 12,
-                backgroundColor: "#111",
+                backgroundColor: GameConfig.purpleColor,
                 color: "#fff",
-                fontSize: 15,
+                fontSize: 20,
                 fontWeight: 600,
                 border: "none",
                 cursor: "pointer",
               }}
             >
-              Go to archive →
+              Go to archive
             </button>
           </div>
         </div>

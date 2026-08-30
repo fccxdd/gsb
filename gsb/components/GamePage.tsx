@@ -3,7 +3,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ImNewspaper } from "react-icons/im";
+import Image from "next/image";
 import { GameConfig } from "@/lib/gameConfig";
 import PuzzleGrid from "@/components/PuzzleGrid";
 import NewspaperModal from "@/components/NewsPaperModal";
@@ -13,6 +13,7 @@ import ShareButton from "@/components/ShareButton";
 import GameOverModal from "@/components/GameOverModal";
 import { saveGameState, loadGameState } from "@/lib/gameStorage";
 import type { Puzzle } from "@/types";
+import TitleCoins, {TITLE_COINS_STYLES} from "@/components/TitleCoins";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -365,31 +366,28 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col min-h-screen items-center bg-white font-sans">
+    <div className={`relative flex flex-col min-h-screen items-center font-sans ${GameConfig.pageBackgroundColor}`}>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
 
-      <main className="flex w-full max-w-3xl flex-col items-center pt-20 pb-10 bg-zinc-50 min-h-screen">
-        <h1 className="text-6xl font-bold tracking-wide">
-          <span className={GameConfig.puzzleTextColors.gold}>G</span>
-          <span className={GameConfig.puzzleTextColors.silver}>S</span>
-          <span className={GameConfig.puzzleTextColors.bronze}>B</span>
-        </h1>
+      <main className="relative flex w-full max-w-3xl flex-col items-center pt-20 pb-10 min-h-screen">
+        <div className="flex mt-2">
+          <TitleCoins coins={TITLE_COINS_STYLES} />
+        </div>
 
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-xl md:text-2xl mt-3 tracking-wide font-bold">
           Rank by revenue -{" "}
           <span className={GameConfig.puzzleTextColors.gold}>Gold</span>{" "}
           <span className={GameConfig.puzzleTextColors.silver}>Silver</span>{" "}
           <span className={GameConfig.puzzleTextColors.bronze}>Bronze</span>
         </h2>
 
-        <h3 style={{ color: "#4C4CDB", fontWeight: "bold" }}>{puzzle.fiscalYear}</h3>
+        <p className="text-2xl md:text-3xl font-bold" style={{ color: GameConfig.purpleColor }}>
+          {puzzle.fiscalYear}
+        </p>
 
-        <div
-          className="px-4 py-1.5 rounded-full text-white text-sm font-semibold"
-          style={{ backgroundColor: "#2F8F22" }}
-        >
+        <p className="text-lg md:text-xl font-bold italic">
           {puzzle.revenueRange}
-        </div>
+        </p>
 
         <PuzzleGrid
           companies={puzzle.companies}
@@ -408,12 +406,36 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           gameOver={gameOver}
         />
 
-        <button
-          onClick={() => setNewspaperOpen(true)}
-          className="cursor-pointer hover:opacity-70 transition-opacity"
-        >
-          <ImNewspaper className={`text-6xl ${GameConfig.newsPaperTextColor}`} />
-        </button>
+        <div className="w-full flex justify-center">
+          <button
+            onClick={() => setNewspaperOpen(true)}
+            className="relative flex items-start gap-2 cursor-pointer hover:opacity-70 transition-opacity"
+          >
+            {/* Newsboy illustration */}
+            <Image
+              src="/newsboy.png"
+              alt="Open newspaper"
+              width={84}
+              height={84}
+            />
+
+            {/* Speech bubble */}
+            <div className="relative bg-white border-2 border-zinc-800 rounded-2xl px-4 py-2 mt-2">
+              <div className="absolute -left-2 top-3 w-0 h-0
+                              border-t-8 border-t-transparent
+                              border-b-8 border-b-transparent
+                              border-r-10 border-r-zinc-800" />
+              <div className="absolute -left-1.5 top-3 w-0 h-0
+                              border-t-7 border-t-transparent
+                              border-b-7 border-b-transparent
+                              border-r-9 border-r-white" />
+
+              <span className="font-gaegu text-lg sm:text-xl text-zinc-800 leading-tight whitespace-nowrap">
+                Read the<br /> Headlines
+              </span>
+            </div>
+          </button>
+        </div>
 
         <LifeBar lives={lives} />
 
@@ -441,9 +463,10 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
             disabled={!canSubmit}
             className={`px-4 py-1.5 rounded-full border text-sm transition-colors ${
               canSubmit
-                ? "border-zinc-300 text-white bg-[#4C4CDB] font-bold cursor-pointer"
+                ? "border-zinc-300 text-white font-bold cursor-pointer"
                 : "border-zinc-200 text-zinc-300 cursor-not-allowed"
             }`}
+            style={canSubmit ? { backgroundColor: `${GameConfig.purpleColor}` } : undefined}
           >
             {GameConfig.submitText}
           </button>

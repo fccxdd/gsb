@@ -69,7 +69,7 @@ return (
     )}
 
     <div
-      className="relative w-full max-w-2xl mx-16 bg-white rounded-lg overflow-hidden shadow-2xl"
+      className="relative w-full max-w-3xl mx-4 sm:mx-16 bg-white rounded-lg overflow-hidden shadow-2xl"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
@@ -95,14 +95,17 @@ return (
         </button>
       </div>
 
-      {/* Image */}
-      <div className="relative w-full h-[60vh]">
+      {/* Image — intrinsically sized so the portrait clipping fills the modal
+          width instead of being letterboxed by a fixed-height container. */}
+      <div className="flex justify-center px-4 pb-2">
         <Image
           src={current_company.newspaperClipping}
           alt={`${current_company.name} newspaper clipping`}
-          fill
+          width={1080}
+          height={1310}
           priority
-          className="object-contain p-4"
+          sizes="(max-width: 768px) 90vw, 768px"
+          className="h-auto w-auto max-w-full max-h-[72vh]"
         />
       </div>
 

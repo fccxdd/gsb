@@ -6,6 +6,7 @@ import Link from "next/link";
 import { IoClose } from "react-icons/io5";
 import ShareButton from "@/components/ShareButton";
 import { Medal, type MedalVariant } from "@/components/Medal";
+import { GameConfig } from "@/lib/gameConfig";
 
 interface GameOverModalProps {
   won: boolean;
@@ -73,7 +74,8 @@ export default function GameOverModal({
 
         <Link
           href="/archive"
-          className="flex items-center gap-2 px-5 py-2 rounded-full bg-[#4C4CDB] text-white text-sm font-medium hover:bg-purple-500 active:scale-95 transition-all cursor-pointer"
+          style={{ backgroundColor: GameConfig.purpleColor }}
+          className="flex items-center gap-2 px-5 py-2 rounded-full text-white text-sm font-medium hover:bg-purple-500 active:scale-95 transition-all cursor-pointer"
         >
           Play Archive
         </Link>

@@ -1,0 +1,12 @@
+{
+  "name": "cloudflare-worker",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260828.1",
+    "typescript": "^5",
+    "wrangler": "^4"
+  }
+}
