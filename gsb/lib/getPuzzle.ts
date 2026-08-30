@@ -14,7 +14,7 @@ interface SanityCompany {
 }
 
 export async function getTodaysPuzzle() {
-  const today = new Date().toLocaleDateString('en-CA');
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
 
   const raw = await client.fetch(
     `*[_type == "puzzle" && date == $date][0]{

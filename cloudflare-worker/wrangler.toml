@@ -1,0 +1,11 @@
+name = "gsb"
+main = "src/index.ts"
+compatibility_date = "2026-08-03"
+
+[triggers]
+# Monday, Wednesday, Friday at 5am Eastern
+# 10:00 UTC covers 5am EST (winter)
+# 09:00 UTC covers 5am EDT (summer)
+crons = [
+  "0 9,10 * * 1,3,5"
+]
