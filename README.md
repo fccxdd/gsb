@@ -5,6 +5,8 @@ GSB (short for Gold, Silver, Bronze) is a trivia game where players rank 4 diffe
 
 Repo Structure:
 
-GSB
+**GSB**
+* Stores the framework for the GSB puzzle
 
-Studio
+**Studio**
+* Stores the framework for the puzzle entries

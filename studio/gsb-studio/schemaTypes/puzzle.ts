@@ -59,14 +59,7 @@ export default {
             title: 'Correct Rank (1 = highest revenue)',
             type: 'number',
             validation: (Rule: any) => Rule.required().min(1).max(4)
-          },
-          {
-            name: 'headlines',
-            title: 'Clue Headlines (2-3)',
-            type: 'array',
-            of: [{ type: 'string' }],
-            validation: (Rule: any) => Rule.min(2).max(3)
-          },
+          }
         ]
       }]
     }

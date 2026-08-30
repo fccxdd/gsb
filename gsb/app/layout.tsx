@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { Inria_Serif } from "next/font/google";
-import {Luckiest_Guy} from "next/font/google";
+import { Inria_Serif, Luckiest_Guy, Gaegu, Lora } from "next/font/google";
 import "./globals.css";
 import { GameConfig } from "../lib/gameConfig";
 import Footer from "@/components/Footer";
@@ -15,6 +14,18 @@ const luckiestGuy = Luckiest_Guy({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-luckiest",
+});
+
+const gaegu = Gaegu({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-gaegu",
+});
+
+const lora = Lora({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-lora",
 });
 
 export const metadata: Metadata = {
@@ -51,10 +62,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inriaSerif.variable} ${luckiestGuy.variable} h-full antialiased`}
+      className={`${inriaSerif.variable} ${luckiestGuy.variable} ${gaegu.variable} ${lora.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}
-      <Footer />
+      <div className="flex-1"><Footer /></div>
       </body>
     </html>
   );

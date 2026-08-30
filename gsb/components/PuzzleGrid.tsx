@@ -3,7 +3,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GameConfig } from "../lib/gameConfig";
 import { useTileAnimation } from "@/hooks/useTileAnimation";
 import type { Company } from "@/types";
@@ -54,6 +54,20 @@ export default function PuzzleGrid({
     clearStylesRef.current = clearStyles;
   });
 
+  useEffect(() => {
+  if (hasWon) {
+    console.log(
+      "companies at win:",
+      companies.map((c) => ({ id: c.id, name: c.name, correctRank: c.correctRank }))
+    );
+  }
+}, [hasWon, companies]);
+
+  // Tracks which tiles were "selected" on the previous render so we can fire a
+  // one-shot depop animation on the tiles that just flipped selected → unselected.
+  const prevSelectedRef = useRef<Set<number>>(new Set());
+  const [depopIds, setDepopIds] = useState<Set<number>>(new Set());
+
   const unlockedCount = 4 - snapIds.length;
 
   // Ranks still available for selection (those not yet snapped).
@@ -85,6 +99,46 @@ export default function PuzzleGrid({
     }
   }
 
+  // Which tiles are currently "selected" (picked, not yet snapped/animating).
+  // Mirrors the per-tile isSelected computed in the map below.
+  const currentSelected = new Set(
+    displayOrder
+      .filter((logo) => {
+        const selectionRank = orderedIds.indexOf(logo.id);
+        const isAutoFilled = selectionRank === unlockedCount - 1;
+        const isSnapped  = snapIds.includes(logo.id);
+        const isPending  = pendingSnapIds.includes(logo.id);
+        const hasResolved = Object.keys(resolvedSlots).length > 0 && resolvedSlots[logo.id] !== undefined;
+        return selectionRank !== -1 && !isAutoFilled && !isSnapped && !isPending && !hasResolved;
+      })
+      .map((logo) => logo.id)
+  );
+
+  useEffect(() => {
+    // Tiles that were selected last render but aren't now → play depop.
+    const justDeselected = [...prevSelectedRef.current].filter((id) => !currentSelected.has(id));
+    prevSelectedRef.current = currentSelected;
+
+    if (justDeselected.length === 0) return;
+
+    setDepopIds((prev) => {
+      const next = new Set(prev);
+      justDeselected.forEach((id) => next.add(id));
+      return next;
+    });
+
+    // Clear the depop flag after the animation so it can retrigger next time.
+    const t = setTimeout(() => {
+      setDepopIds((prev) => {
+        const next = new Set(prev);
+        justDeselected.forEach((id) => next.delete(id));
+        return next;
+      });
+    }, 200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderedIds, snapIds, pendingSnapIds, resolvedSlots]);
+
   return (
     <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-2xl p-2">
       {displayOrder.map((logo) => {
@@ -100,6 +154,13 @@ export default function PuzzleGrid({
         // Revenue only shows on the final win reveal, never mid-game.
         const isRevealed    = gameOver && isSnapped && revealedRanks.includes(company.correctRank);
 
+        // A tile counts as "selected" once the user has picked it (it holds a
+        // rank slot) but before it snaps or animates.
+        // Color: any picked tile (including the auto-filled one) shows its rank
+        // color. Pop: only user-picked tiles (auto-filled excluded) animate.
+        const isColored  = selectionRank !== -1 && !isSnapped && !isPending && !isAnimating;
+        const isSelected = isColored && !isAutoFilled;
+
         // Color priority: snapped/pending/snapping → correct rank color
         //                 displaced → stay white (don't reveal rank color during animation)
         //                 selected → rank color by slot position (gold=1st pick, silver=2nd, etc.)
@@ -107,12 +168,12 @@ export default function PuzzleGrid({
         const bg =
           isSnapped || isPending || isSnapping
             ? RANK_COLORS[company.correctRank]
-            : selectionRank !== -1 && !isAnimating
+            : isColored
             ? RANK_COLORS[availableRanks[selectionRank]]
             : "bg-white";
 
         const isInteractive = !isAutoFilled && !isSubmitting && !isSnapped && !isPending && !isAnimating;
-
+        
         return (
           <button
             key={logo.id}
@@ -126,6 +187,18 @@ export default function PuzzleGrid({
               bg,
               isInteractive ? "cursor-pointer" : "cursor-default",
               isIncorrect ? "opacity-50 shake" : "opacity-100",
+              // Pop/depop only when the slide hook is NOT driving this tile's
+              // transform. During a slide (isAnimating) we add nothing here so
+              // the hook's inline transform runs uncontested.
+              isAnimating
+                ? ""
+                : isIncorrect
+                ? "" // let `shake` own the animation, don't fight it with pop/depop
+                : depopIds.has(logo.id)
+                ? "tile-depop"
+                : isSelected
+                ? "tile-pop"
+                : "",
             ].join(" ")}
           >
             {/* Logo — slides up when revenue is revealed */}
@@ -161,14 +234,14 @@ export default function PuzzleGrid({
               </span>
               <span
                 className="px-3 py-1 rounded-full text-white text-xs sm:text-sm font-semibold"
-                style={{ backgroundColor: "#2F8F22" }}
+                style={{ backgroundColor: GameConfig.revenueRevealColor }}
               >
                 {company.revenue}
               </span>
             </div>
 
             {/* Medal shine on win */}
-            {hasWon && isSnapped && company.correctRank !== 4 && (
+            {hasWon && isSnapped && company.correctRank === 1 && (
               <span
                 className="medal-shine-overlay"
                 style={{

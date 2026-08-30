@@ -1,15 +1,10 @@
 // app/page.tsx
 
 import { getTodaysPuzzle } from '@/lib/getPuzzle'
-import GamePageWrapper from '@/components/GamePageWrapper'
-import SplashScreenNoPuzzle from '@/components/SplashScreenNoPuzzle'
+import HomeClient from '@/components/HomeClient'
 
 export default async function Home() {
   const puzzle = await getTodaysPuzzle()
 
-  if (!puzzle) {
-    return <SplashScreenNoPuzzle />
-  }
-
-  return <GamePageWrapper puzzle={puzzle} />
+  return <HomeClient puzzle={puzzle} />
 }

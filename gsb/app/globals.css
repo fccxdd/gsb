@@ -10,6 +10,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inria-serif);
   --font-luckiest: var(--font-luckiest);
+  --font-gaegu: var(--font-gaegu);
+  --font-lora: var(--font-lora);
 }
 
 body {

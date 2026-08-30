@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { GameConfig } from "@/lib/gameConfig";
 
 export default function NotFound() {
   return (
@@ -29,7 +30,7 @@ export default function NotFound() {
 
       <p
         style={{
-          fontSize: 22,
+          fontSize: 30,
           fontWeight: 500,
           color: "#111",
           margin: 0,
@@ -44,9 +45,9 @@ export default function NotFound() {
           marginTop: 8,
           padding: "12px 28px",
           borderRadius: 12,
-          backgroundColor: "#111",
+          backgroundColor: `${GameConfig.purpleColor}`,
           color: "#fff",
-          fontSize: 15,
+          fontSize: 20,
           fontWeight: 600,
           textDecoration: "none",
         }}

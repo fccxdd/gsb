@@ -4,12 +4,13 @@ export const GameConfig = {
   
   // SEO Metadata
   titleName: "GSB | Play",
+  gsbEmail: "playgsb1@gmail.com",
   description: "Play GSB - The trivia game where players rank 4 different companies based on revenue.",
   url: "https://playgsb.com",
   imageURL: "https://playgsb.com/gsb-preview.png",
 
   // Puzzle Metadata
-  puzzleStartDay: "2026-06-08",
+  puzzleStartDay: "2026-08-03", // YYYY-MM-DD
   puzzleTitle: "GSB",
   puzzleSubtitle: "Rank by revenue - Gold Silver Bronze",
   maxLives: 3,
@@ -54,6 +55,8 @@ export const GameConfig = {
   
   // Colors
 
+  pageBackgroundColor: "bg-gray-100",
+
   puzzleBackgroundHex: {
     gold:   "#FFBF00",
     silver: "#CCCCCC",
@@ -77,11 +80,12 @@ export const GameConfig = {
                 },
   
   newsPaperTextColor: 'text-[#000000]',
-  newsPaperBackgroundColor: 'bg-[#000000]',
+  newsPaperBackgroundColor: 'bg-[#000000]',  
+  newsPaperText: "Read the Headlines",
 
-  fiscalYearTextColor: 'text-[#4C4CDB]',
-  
-  revenueRevealColor: 'bg-[#2F8F22]',
+  revenueRevealColor: "#2F8F22",
+  purpleColor: "#4C4CDB",
+  ribbonColor: "#7386FF",
 
   puzzleTextColors: {
     gold: 'text-[#FFBF00]',
@@ -89,4 +93,6 @@ export const GameConfig = {
     bronze: 'text-[#CD7F32]',
     fourth: 'text-[#FFFFFF]'
   },
+
+  unsolvedPuzzle: "?"
 }

@@ -14,16 +14,16 @@ function Ribbon({ faded = false }: { faded?: boolean }) {
   return (
     <div className={`flex items-end justify-center w-full relative z-0 h-[58px] ${faded ? "opacity-30" : ""}`} style={{ marginBottom: "-33px" }}>
       <div
-        className="relative overflow-hidden bg-[#4C4CDB]"
-        style={{ width: "35px", height: "58px", transform: "rotate(-29deg)", transformOrigin: "bottom center", marginRight: "-13px" }}
+        className="relative overflow-hidden "
+        style={{ backgroundColor: GameConfig.purpleColor, width: "35px", height: "58px", transform: "rotate(-29deg)", transformOrigin: "bottom center", marginRight: "-13px" }}
       >
-        <div className="absolute top-0 bottom-0 bg-[#7386FF]" style={{ left: "50%", transform: "translateX(-50%)", width: "12px" }} />
+        <div className="absolute top-0 bottom-0" style={{ backgroundColor: GameConfig.ribbonColor, left: "50%", transform: "translateX(-50%)", width: "12px" }} />
       </div>
       <div
-        className="relative overflow-hidden bg-[#4C4CDB]"
-        style={{ width: "35px", height: "58px", transform: "rotate(29deg)", transformOrigin: "bottom center", marginLeft: "-13px" }}
+        className="relative overflow-hidden "
+        style={{ backgroundColor: GameConfig.purpleColor, width: "35px", height: "58px", transform: "rotate(29deg)", transformOrigin: "bottom center", marginLeft: "-13px" }}
       >
-        <div className="absolute top-0 bottom-0 bg-[#7386FF]" style={{ left: "50%", transform: "translateX(-50%)", width: "12px" }} />
+        <div className="absolute top-0 bottom-0" style={{ backgroundColor: GameConfig.ribbonColor, left: "50%", transform: "translateX(-50%)", width: "12px" }} />
       </div>
     </div>
   );
@@ -33,43 +33,49 @@ interface MedalProps {
   status: MedalVariant;
   shine?: boolean;
   interactive?: boolean;
+  ribbon?: boolean;
 }
 
-export function Medal({ status, shine, interactive = false }: MedalProps) {
+export function Medal({ status, shine, interactive = false, ribbon = true }: MedalProps) {
   const isSolved = status === "gold" || status === "silver" || status === "bronze";
+  const isFirst = status === "gold";
   const isFourth = status === "fourth";
-  const isFuture = status === "active";
+  const isActive = status === "active";
   const isUnsolved = status === "unsolved";
   const colors = MEDAL_COLORS[status] ?? MEDAL_COLORS.bronze;
 
-  const showShine = isSolved && (shine ?? true);
+  const showShine = isFirst && (shine ?? true);
 
-  // Fourth place gets a ribbon too (it's a finished game), just no medal color.
-  const hasRibbon = isSolved || isFourth || isFuture;
+  const hasRibbon = (isSolved || isActive) && ribbon;
+  const needsSpacer = (isFourth || isUnsolved) && ribbon;
 
   return (
     <div className="flex flex-col items-center w-[100px]">
-      {hasRibbon && <Ribbon faded={isFuture} />}
-      {isUnsolved && <div className="h-[65px] mb-[-20px]" />}
+      {hasRibbon && <Ribbon faded={isActive} />}
+      {needsSpacer && <div className="h-[65px] mb-[-40px]" />}
 
       <div className={`relative z-10 w-[72px] h-[72px] rounded-full flex items-center justify-center overflow-hidden
         ${interactive ? "transition-transform duration-150 hover:scale-105" : ""}
         ${isSolved ? colors.outer : ""}
-        ${isFuture ? `${colors.outer} opacity-30` : ""}
-        ${isFourth ? "bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700" : ""}
-        ${isUnsolved ? "bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700" : ""}`}>
+        ${isActive ? `${colors.outer} opacity-30` : ""}
+        ${isFourth ? "bg-white border-4 border-slate-300" : ""}
+        ${isUnsolved ? "bg-white border-4 border-slate-300" : ""}`}>
 
         {isSolved && <div className={`w-[56px] h-[56px] rounded-full ${colors.inner}`} />}
 
-        {isFuture && (
+        {isActive && (
           <div className={`w-[56px] h-[56px] rounded-full ${colors.inner} flex items-center justify-center`}>
-            <span className="text-[#4A67D4] text-xl font-bold">?</span>
+            <span className="text-[#4A67D4] text-xl font-bold font-lora">{GameConfig.unsolvedPuzzle}</span>
           </div>
         )}
 
-        {isFourth && <span className="text-3xl" role="img" aria-label="fourth place">4️⃣</span>}
+        {isFourth && (
+          <span className="text-3xl font-bold" aria-label="fourth place">
+            4<span className="text-base align-super">th</span>
+          </span>
+        )}
 
-        {isUnsolved && <span className="text-[#4A67D4] text-xl font-bold">?</span>}
+        {isUnsolved && <span className="text-[#4A67D4] text-xl font-bold font-lora">{GameConfig.unsolvedPuzzle}</span>}
 
         {showShine && <div className="medal-shine-overlay" />}
       </div>
