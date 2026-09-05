@@ -36,7 +36,6 @@ interface SplashScreenNoPuzzleProps {
 export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzleProps) {
   const router = useRouter();
   const tileRefs = useRef<(HTMLDivElement | null)[]>([null, null, null, null]);
-  const [visible, setVisible] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [, setFilledDots] = useState([false, false]);
 
@@ -118,6 +117,11 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
   }
 
   useEffect(() => {
+    // Warm the archive route while the tile animation plays.
+    router.prefetch("/archive");
+  }, [router]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function run() {
@@ -144,11 +148,10 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
   }, []);
 
   function handleArchive() {
-    setVisible(false);
-    setTimeout(() => {
-      onDone?.();
-      router.push("/archive");
-    }, 600);
+    // Navigate immediately; this overlay unmounts with the route, so there is
+    // no window where the (empty) page underneath is showing.
+    onDone?.();
+    router.push("/archive");
   }
 
   const gridSize = 2 * TILE_SIZE + GAP;
@@ -163,9 +166,6 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: "#f4f4f4",
-        transition: "opacity 0.6s ease",
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? "auto" : "none",
       }}
     >
       <div style={{ position: "relative", width: gridSize, height: gridSize }}>

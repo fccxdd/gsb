@@ -64,8 +64,9 @@ export default function RootLayout({
       lang="en"
       className={`${inriaSerif.variable} ${luckiestGuy.variable} ${gaegu.variable} ${lora.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}
-      <div className="flex-1"><Footer /></div>
+      <body className="min-h-full flex flex-col">
+        <div className="flex-1">{children}</div>
+        <Footer />
       </body>
     </html>
   );
