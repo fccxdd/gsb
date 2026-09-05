@@ -24,7 +24,7 @@ export function PastPuzzle({ puzzle, status, isToday }: PuzzleCircleProps) {
 
   const inner = (
     <div className="flex flex-col items-center">
-      <Medal status={status} interactive shine={false} />
+      <Medal status={status} interactive shine={false} ribbon={false} />
 
       {/* Date label */}
       <span className={`mt-2 text-[15px] font-lora font-bold italic tracking-tight

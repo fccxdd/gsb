@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react'
 import { ArchivePuzzle as Puzzle } from '@/lib/archiveSanity'
 import { getAllPuzzleResults, getMedalStatus, MedalStatus } from '@/lib/PuzzleResults'
 import { PastPuzzle } from '@/components/PastPuzzles'
-import { GameConfig } from '@/lib/gameConfig'
 
 interface ArchiveGridProps {
   puzzles: Puzzle[]
@@ -46,13 +45,6 @@ function Stats({ puzzles, statuses }: { puzzles: Puzzle[]; statuses: Record<stri
     </div>
   )
 }
-
-const LEGEND = [
-  { color: [GameConfig.puzzleBackgroundColors.gold], label: 'Gold — no lives lost' },
-  { color: [GameConfig.puzzleBackgroundColors.silver], label: 'Silver — 2 lives left' },
-  { color: [GameConfig.puzzleBackgroundColors.bronze], label: 'Bronze — 1 life left' },
-  { color: ['bg-[#FFFFFF]'], label: 'Unsolved' },
-]
 
 function MonthNavButton({
   direction,

@@ -2,11 +2,9 @@
 
 "use client";
 
-import { useState } from "react";
 import { GameConfig } from "@/lib/gameConfig";
 import { ArchiveGrid } from "@/components/ArchiveGrid";
 import TitleCoins, { TITLE_COINS_STYLES } from "@/components/TitleCoins";
-import Loading from "@/components/loading";
 import type { ArchivePuzzle } from "@/lib/archiveSanity";
 
 interface ArchiveClientProps {
@@ -15,11 +13,6 @@ interface ArchiveClientProps {
 }
 
 export default function ArchiveClient({ puzzles, today }: ArchiveClientProps) {
-  const [showSplash, setShowSplash] = useState(true);
-
-  if (showSplash) {
-    return <Loading onDone={() => setShowSplash(false)} />;
-  }
 
   return (
     <div className={`flex flex-col min-h-screen items-center font-sans ${GameConfig.pageBackgroundColor}`}>
