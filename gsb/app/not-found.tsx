@@ -4,6 +4,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { GameConfig } from "@/lib/gameConfig";
 import SplashScreenNoPuzzle from "@/components/SplashScreenNoPuzzle";
@@ -24,6 +25,21 @@ function getPuzzleDateHeading(pathname: string): string | null {
 
 export default function NotFound() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // The static 404.html this page renders into is baked at build time
+  // using the build-time pathname, not the real URL the browser is on
+  // (Cloudflare serves this same file for any unmatched path). Render
+  // a neutral blank frame until hydration picks up the real pathname,
+  // instead of flashing the generic 404 design before correcting it.
+  if (!mounted) {
+    return <div style={{ minHeight: "100vh", backgroundColor: "#f4f4f4" }} />;
+  }
+
   const puzzleHeading = getPuzzleDateHeading(pathname);
 
   if (puzzleHeading) {
