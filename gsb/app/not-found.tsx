@@ -1,10 +1,35 @@
 // app/not-found.tsx
 
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { GameConfig } from "@/lib/gameConfig";
+import SplashScreenNoPuzzle from "@/components/SplashScreenNoPuzzle";
+import { getNoPuzzleHeading } from "@/lib/noPuzzleHeading";
+
+const PUZZLE_DATE_RE = /^\/puzzles\/(\d{4}-\d{2}-\d{2})$/;
+
+// Cloudflare Pages serves this 404 page (with the browser's real URL
+// intact) for any /puzzles/[date] path that wasn't pre-built, i.e. any
+// date with no puzzle. This inspects that path to give a specific
+// message instead of a generic "not found".
+function getPuzzleDateHeading(pathname: string): string | null {
+  const match = pathname.match(PUZZLE_DATE_RE);
+  if (!match) return null;
+
+  return getNoPuzzleHeading(match[1]);
+}
 
 export default function NotFound() {
+  const pathname = usePathname();
+  const puzzleHeading = getPuzzleDateHeading(pathname);
+
+  if (puzzleHeading) {
+    return <SplashScreenNoPuzzle heading={puzzleHeading} />;
+  }
+
   return (
     <div
       style={{

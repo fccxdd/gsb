@@ -10,7 +10,6 @@ interface SanityCompany {
   newspaperClipping: string
   revenue: string
   correctRank: 1 | 2 | 3 | 4
-  headlines: string[]
 }
 
 export async function getTodaysPuzzle() {
@@ -27,8 +26,7 @@ export async function getTodaysPuzzle() {
         "logoSrc": logo.asset->url,
         "newspaperClipping": newspaperImage.asset->url,
         revenue,
-        correctRank,
-        headlines
+        correctRank
       }
     }`,
     { date: today }
@@ -48,7 +46,6 @@ export async function getTodaysPuzzle() {
       newspaperClipping: c.newspaperClipping,
       revenue: c.revenue,
       correctRank: c.correctRank,
-      headlines: c.headlines ?? [],
     }))
   }
 }

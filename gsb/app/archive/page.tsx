@@ -2,7 +2,7 @@
 
 import { getArchivePuzzles } from '@/lib/archiveSanity'
 import { Metadata } from 'next';
-import ArchiveClient from '@/components/ArchiveClient'
+import ArchiveClient from '@/components/archive/ArchiveClient'
 
 export const revalidate = 3600
 

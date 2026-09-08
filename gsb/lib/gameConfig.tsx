@@ -29,6 +29,10 @@ export const GameConfig = {
               revealPerRank: 400,             // gap between each revenue reveal
               successModalDelay: 600,         // wait after reveals before showing modal
               partialCorrectSettle: 500,      // extra buffer after partial correct slides finish
+              lossPopDelay: 400,              // pause before popping the wrong tiles on loss
+              lossPopStagger: 150,            // gap between each wrong tile's individual pop-in
+              lossPop: 550,                   // how long the (slow) pop-in plays, matches .tile-pop-loss
+              lossPopToSlideDelay: 1000,       // pause after the pop-in before the tiles slide home
 
               // PuzzleGrid / useTileAnimation
               tileSlide: 1200,                 // how long a single tile takes to slide to its slot
@@ -49,8 +53,14 @@ export const GameConfig = {
   
   // Game Over Text
   gameOver: {
-    win: "",
-    loss: "Better luck next time!"
+    win: {
+      title: "Great work!",
+      subtitle: "You ranked all 4 correctly."
+    },
+    loss: {
+      title: "Better luck next time!",
+      subtitle: "Play the Archive to try your luck on another puzzle."
+    }
   },
   
   // Colors

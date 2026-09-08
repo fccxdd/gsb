@@ -3,6 +3,7 @@ import { Inria_Serif, Luckiest_Guy, Gaegu, Lora } from "next/font/google";
 import "./globals.css";
 import { GameConfig } from "../lib/gameConfig";
 import Footer from "@/components/Footer";
+import Script from "next/script";
 
 const inriaSerif = Inria_Serif({
   variable: "--font-inria-serif",
@@ -60,12 +61,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+
+    
     <html
       lang="en"
       className={`${inriaSerif.variable} ${luckiestGuy.variable} ${gaegu.variable} ${lora.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}
-      <div className="flex-1"><Footer /></div>
+      {/* Google Tag */}
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-DZW8753FYH"
+        strategy="afterInteractive"
+      />
+      <Script id="google-tag" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-DZW8753FYH');
+        `}
+      </Script>
+      
+      <body className="min-h-full flex flex-col">
+        <div className="flex-1 flex flex-col">{children}</div>
+        <Footer />
       </body>
     </html>
   );

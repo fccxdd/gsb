@@ -3,8 +3,7 @@
 import { useMemo, useState } from 'react'
 import { ArchivePuzzle as Puzzle } from '@/lib/archiveSanity'
 import { getAllPuzzleResults, getMedalStatus, MedalStatus } from '@/lib/PuzzleResults'
-import { PastPuzzle } from '@/components/PastPuzzles'
-import { GameConfig } from '@/lib/gameConfig'
+import { PastPuzzle } from '@/components/archive/PastPuzzles'
 
 interface ArchiveGridProps {
   puzzles: Puzzle[]
@@ -23,36 +22,6 @@ function chunkIntoRows(puzzles: Puzzle[], size = 3): Puzzle[][] {
 function monthKey(date: string) {
   return date.slice(0, 7)
 }
-
-function Stats({ puzzles, statuses }: { puzzles: Puzzle[]; statuses: Record<string, MedalStatus> }) {
-  const solved = puzzles.filter(p => ['gold', 'silver', 'bronze'].includes(statuses[p.date]))
-  const gold = puzzles.filter(p => statuses[p.date] === 'gold').length
-
-  return (
-    <div className="flex gap-8 mt-8 pt-6 border-t border-slate-800">
-      {[
-        { num: solved.length, label: 'solved' },
-        { num: gold, label: 'gold medals' },
-      ].map(({ num, label }) => (
-        <div key={label} className="flex flex-col gap-0.5">
-          <span className="font-lora text-2xl font-bold text-slate-900 leading-none">
-            {num}
-          </span>
-          <span className="text-[10px] font-mono tracking-widest uppercase text-slate-400">
-            {label}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-const LEGEND = [
-  { color: [GameConfig.puzzleBackgroundColors.gold], label: 'Gold — no lives lost' },
-  { color: [GameConfig.puzzleBackgroundColors.silver], label: 'Silver — 2 lives left' },
-  { color: [GameConfig.puzzleBackgroundColors.bronze], label: 'Bronze — 1 life left' },
-  { color: ['bg-[#FFFFFF]'], label: 'Unsolved' },
-]
 
 function MonthNavButton({
   direction,
@@ -144,7 +113,7 @@ export function ArchiveGrid({ puzzles, today }: ArchiveGridProps) {
       {/* Grid */}
       <div className="flex flex-col gap-8 w-full">
         {rows.map((row, ri) => (
-          <div key={ri} className="flex gap-5 flex-wrap justify-center">
+          <div key={ri} className="flex gap-2 sm:gap-5 flex-wrap justify-center">
             {row.map(puzzle => (
               <PastPuzzle
                 key={puzzle._id}
@@ -157,7 +126,6 @@ export function ArchiveGrid({ puzzles, today }: ArchiveGridProps) {
         ))}
       </div>
 
-      {/* <Stats puzzles={puzzles} statuses={statuses} /> */}
     </>
   )
 }

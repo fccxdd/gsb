@@ -24,6 +24,7 @@ interface PuzzleGridProps {
   snapIds: number[];
   pendingSnapIds: number[];
   snappingIds: number[];
+  popIds: number[];
   isSubmitting: boolean;
   revealedRanks: number[];
   resolvedSlots: Record<number, number>;
@@ -41,6 +42,7 @@ export default function PuzzleGrid({
   snapIds,
   pendingSnapIds,
   snappingIds,
+  popIds,
   isSubmitting,
   revealedRanks,
   resolvedSlots,
@@ -140,7 +142,7 @@ export default function PuzzleGrid({
   }, [orderedIds, snapIds, pendingSnapIds, resolvedSlots]);
 
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-2xl p-2">
+    <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-[clamp(8px,1.5vh,16px)] sm:gap-y-4 rounded-2xl p-[clamp(4px,0.8vh,8px)] sm:p-2">
       {displayOrder.map((logo) => {
         const selectionRank = orderedIds.indexOf(logo.id);
         const isAutoFilled  = selectionRank === unlockedCount - 1;
@@ -151,8 +153,12 @@ export default function PuzzleGrid({
         const isAnimating   = isSnapping || isDisplaced;
         const isIncorrect   = incorrectIds.includes(logo.id);
         const company       = companies.find((c) => c.id === logo.id)!;
-        // Revenue only shows on the final win reveal, never mid-game.
-        const isRevealed    = gameOver && isSnapped && revealedRanks.includes(company.correctRank);
+        // Revenue only shows on the final reveal, never mid-game. The true
+        // 4th-place company's revenue is withheld even on a loss (where
+        // auto-solve snaps every tile into place) — it only ever shows once
+        // the player has actually won, i.e. gotten all 4 correct.
+        const isRevealed    = gameOver && isSnapped && revealedRanks.includes(company.correctRank)
+          && (company.correctRank !== 4 || hasWon);
 
         // A tile counts as "selected" once the user has picked it (it holds a
         // rank slot) but before it snaps or animates.
@@ -183,7 +189,7 @@ export default function PuzzleGrid({
             className={[
               "relative overflow-hidden rounded-2xl border border-zinc-200",
               "flex items-center justify-center",
-              "w-[120px] h-[120px] sm:w-[200px] sm:h-[200px]",
+              "w-[clamp(110px,min(47vw-16px,22vh),200px)] h-[clamp(110px,min(47vw-16px,22vh),200px)]",
               bg,
               isInteractive ? "cursor-pointer" : "cursor-default",
               isIncorrect ? "opacity-50 shake" : "opacity-100",
@@ -194,6 +200,8 @@ export default function PuzzleGrid({
                 ? ""
                 : isIncorrect
                 ? "" // let `shake` own the animation, don't fight it with pop/depop
+                : popIds.includes(logo.id)
+                ? "tile-pop-loss" // loss flourish on the wrong tiles, right before they slide home
                 : depopIds.has(logo.id)
                 ? "tile-depop"
                 : isSelected
@@ -207,7 +215,7 @@ export default function PuzzleGrid({
                 style={{ transitionDuration: `${GameConfig.duration.revenueLogoSlide}ms` }}
                 className={[
                   "flex items-center justify-center transition-transform ease-in-out",
-                  "w-[80px] h-[80px] sm:w-[100px] sm:h-[100px]",
+                  "w-[65%] h-[65%]",
                   isRevealed ? "-translate-y-6 sm:-translate-y-8" : "translate-y-0",
                 ].join(" ")}
               >
@@ -224,7 +232,7 @@ export default function PuzzleGrid({
                 transitionDelay: isRevealed ? `${GameConfig.duration.revenueFadeDelay}ms` : "0ms",
               }}
               className={[
-                "absolute bottom-4 sm:bottom-5 flex flex-col items-center gap-1",
+                "absolute bottom-[10%] flex flex-col items-center gap-1",
                 "transition-opacity ease-in-out",
                 isRevealed ? "opacity-100" : "opacity-0",
               ].join(" ")}

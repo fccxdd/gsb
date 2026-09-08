@@ -33,10 +33,10 @@ export default function GameOverModal({
   lives,
   maxLives,
 }: GameOverModalProps) {
-  const title    = won ? "Great work!" 
-                      : "Better luck next time!";
-  const subtitle = won ? "You ranked all 4 correctly."
-                      : "Play the Archive to try your luck on another puzzle.";
+  const title    = won ? GameConfig.gameOver.win.title
+                      : GameConfig.gameOver.loss.title;
+  const subtitle = won ? GameConfig.gameOver.win.subtitle
+                      : GameConfig.gameOver.loss.subtitle;
 
   const status = livesToStatus(won, lives, maxLives);
 
@@ -48,7 +48,7 @@ export default function GameOverModal({
     >
       {/* Stop clicks inside the card from reaching the backdrop. */}
       <div
-        className="relative bg-white rounded-2xl px-10 py-8 flex flex-col items-center gap-3 shadow-2xl"
+        className="relative bg-white rounded-2xl px-10 py-8 max-w-xs mx-4 flex flex-col items-center gap-3 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -62,8 +62,8 @@ export default function GameOverModal({
 
         <Medal status={status} />
 
-        <h2 className="text-2xl font-bold text-zinc-800">{title}</h2>
-        <p className="text-zinc-500 text-sm">{subtitle}</p>
+        <h2 className="text-3xl font-bold font-lora text-zinc-800 text-center">{title}</h2>
+        <p className="text-zinc-500 font-lora text-md text-center">{subtitle}</p>
 
         <ShareButton
           puzzleNumber={puzzleNumber}
@@ -75,7 +75,7 @@ export default function GameOverModal({
         <Link
           href="/archive"
           style={{ backgroundColor: GameConfig.purpleColor }}
-          className="flex items-center gap-2 px-5 py-2 rounded-full text-white text-sm font-medium hover:bg-purple-500 active:scale-95 transition-all cursor-pointer"
+          className="flex items-center gap-2 px-5 py-2 rounded-full font-lora text-white text-md font-medium hover:bg-purple-500 active:scale-95 transition-all cursor-pointer"
         >
           Play Archive
         </Link>

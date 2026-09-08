@@ -2,11 +2,9 @@
 
 "use client";
 
-import { useState } from "react";
 import { GameConfig } from "@/lib/gameConfig";
-import { ArchiveGrid } from "@/components/ArchiveGrid";
+import { ArchiveGrid } from "@/components/archive/ArchiveGrid";
 import TitleCoins, { TITLE_COINS_STYLES } from "@/components/TitleCoins";
-import Loading from "@/components/loading";
 import type { ArchivePuzzle } from "@/lib/archiveSanity";
 
 interface ArchiveClientProps {
@@ -15,15 +13,10 @@ interface ArchiveClientProps {
 }
 
 export default function ArchiveClient({ puzzles, today }: ArchiveClientProps) {
-  const [showSplash, setShowSplash] = useState(true);
-
-  if (showSplash) {
-    return <Loading onDone={() => setShowSplash(false)} />;
-  }
 
   return (
-    <div className={`flex flex-col min-h-screen items-center font-sans ${GameConfig.pageBackgroundColor}`}>
-      <main className={`flex w-full max-w-3xl flex-col items-center px-8 pt-20 pb-10 ${GameConfig.pageBackgroundColor} min-h-screen`}>
+    <div className={`flex flex-1 flex-col items-center font-sans ${GameConfig.pageBackgroundColor}`}>
+      <main className={`flex w-full max-w-3xl flex-col items-center px-3 sm:px-8 pt-20 pb-10 ${GameConfig.pageBackgroundColor}`}>
         <div className="mb-8 flex flex-col items-center">
           <h1 className="flex flex-col items-center gap-1">
             <span className="font-lora text-6xl font-bold text-black tracking-tight">
