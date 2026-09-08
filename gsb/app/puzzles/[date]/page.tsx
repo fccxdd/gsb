@@ -5,6 +5,7 @@ import GamePageWrapper from '@/components/GamePageWrapper'
 import SplashScreenNoPuzzle from '@/components/SplashScreenNoPuzzle'
 
 import { getArchivePuzzles } from '@/lib/archiveSanity'
+import { getNoPuzzleHeading } from '@/lib/noPuzzleHeading'
 
 export async function generateStaticParams() {
   const today = new Date().toISOString().slice(0, 10)
@@ -19,7 +20,6 @@ interface SanityCompany {
   newspaperClipping: string
   revenue: string
   correctRank: 1 | 2 | 3 | 4
-  headlines: string[]
 }
 
 export default async function PuzzlePage({ params }: { params: Promise<{ date: string }> }) {
@@ -36,14 +36,13 @@ export default async function PuzzlePage({ params }: { params: Promise<{ date: s
         "logoSrc": logo.asset->url,
         "newspaperClipping": newspaperImage.asset->url,
         revenue,
-        correctRank,
-        headlines
+        correctRank
       }
     }`,
     { date }
   )
 
-  if (!raw) return <SplashScreenNoPuzzle />
+  if (!raw) return <SplashScreenNoPuzzle heading={getNoPuzzleHeading(date)} />
 
   const puzzle = {
     date: raw.date,
@@ -57,7 +56,6 @@ export default async function PuzzlePage({ params }: { params: Promise<{ date: s
       newspaperClipping: c.newspaperClipping,
       revenue: c.revenue,
       correctRank: c.correctRank,
-      headlines: c.headlines ?? [],
     }))
   }
 

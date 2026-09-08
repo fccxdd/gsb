@@ -139,6 +139,10 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   // Displaced bystander tiles are in resolvedSlots but NOT here, so they stay white.
   const [snappingIds,    setSnappingIds]    = useState<number[]>([]);
 
+  // Wrong tiles get a brief pop-in flourish on a loss, right before they slide
+  // to their correct slot.
+  const [popIds,         setPopIds]         = useState<number[]>([]);
+
   const clearStylesRef = useRef<((ids: number[]) => void) | null>(null);
 
   const logos = useMemo(
@@ -194,24 +198,36 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     [puzzle.companies],
   );
 
-  // Reveal ranks one by one with a stagger.
+  // Reveal ranks one by one with a stagger, lowest revenue first (bronze →
+  // silver → gold). 4th place is always last — its revenue is only ever
+  // shown once every tile (including 4th) is actually snapped, i.e. on a win.
   async function revealRanks() {
-    for (const rank of [1, 2, 3, 4]) {
+    for (const rank of [3, 2, 1, 4]) {
       await wait(GameConfig.duration.revealPerRank);
       setRevealedRanks((prev) => prev.includes(rank) ? prev : [...prev, rank]);
     }
   }
 
-  // Animate tiles to their resolved positions, then clean up CSS transforms.
+  // Animate tiles to their resolved positions. Returns the ids that actually
+  // moved so the caller can clean up their CSS transforms via settleStyles —
+  // only after the caller has applied the permanent layout (visualPos/snapIds),
+  // so the transform doesn't get cleared while the tile's real grid slot is
+  // still the old one (which caused a one-frame flash/snap-back).
   // correctIds: the tiles actually snapping into place (get rank color during animation).
   // Displaced bystanders are in `resolved` but not in correctIds — they stay white.
   async function animateAndSettle(resolved: Record<number, number>, correctIds: number[]) {
     setSnappingIds(correctIds);
     setResolvedSlots(resolved);
     await wait(GameConfig.duration.tileSlide);
-    const movedIds = displayOrder
+    return displayOrder
       .filter((e) => resolved[e.id] !== undefined && resolved[e.id] !== e.slot)
       .map((e) => e.id);
+  }
+
+  // Clears the now-redundant slide transforms. Call only after the permanent
+  // layout state (visualPos/snapIds) has been applied, so this doesn't run
+  // ahead of the re-render that puts the tile in its real final slot.
+  function settleStyles(movedIds: number[]) {
     clearStylesRef.current?.(movedIds);
     setResolvedSlots({});
     setSnappingIds([]);
@@ -233,12 +249,25 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
 
     setGameOver(true);
     setRevealedRanks([]);
-    await animateAndSettle(resolved, unsolvedIds);
+
+    // Give the player a beat to see the board, then pop the wrong tiles
+    // individually, one after another, before sliding them home.
+    await wait(GameConfig.duration.lossPopDelay);
+    for (const id of unsolvedIds) {
+      setPopIds((prev) => [...prev, id]);
+      await wait(GameConfig.duration.lossPopStagger);
+    }
+    await wait(GameConfig.duration.lossPop);
+    setPopIds([]);
+    await wait(GameConfig.duration.lossPopToSlideDelay);
+
+    const movedIds = await animateAndSettle(resolved, unsolvedIds);
 
     const finalPos = lockRemaining({ ...visualPos }, displayOrder);
     unsolvedIds.forEach((id) => { finalPos[id] = RANK_TO_SLOT[getCompany(id).correctRank]; });
     setVisualPos(finalPos);
     setSnapIds(puzzle.companies.map((c) => c.id));
+    settleStyles(movedIds);
     await revealRanks();
     setLossOpen(true);
   }
@@ -275,12 +304,13 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     setRevealedRanks([]);
 
     const resolved = resolveSwaps(buildVisualSlots(displayOrder, snapIds), orderedIds, RANK_TO_SLOT, getCompany);
-    await animateAndSettle(resolved, orderedIds);
+    const movedIds = await animateAndSettle(resolved, orderedIds);
 
     const finalPos: Record<number, number> = { ...visualPos };
     orderedIds.forEach((id) => { finalPos[id] = RANK_TO_SLOT[getCompany(id).correctRank]; });
     setVisualPos(finalPos);
     setSnapIds(puzzle.companies.map((c) => c.id));
+    settleStyles(movedIds);
 
     await revealRanks();
     await wait(GameConfig.duration.successModalDelay);
@@ -316,14 +346,15 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
 
     setPendingSnapIds(correctNonFourth);
     // Slide the tiles home first, then bring in the rank colors.
-    await animateAndSettle(resolved, correctNonFourth);
+    const movedIds = await animateAndSettle(resolved, correctNonFourth);
 
     // Hold the color through the settle delay, but don't snap yet — snapping
     // early makes the color pop in too soon.
-    
+
     const finalSnapIds = [...snapIds, ...correctNonFourth];
     setVisualPos(lockRemaining({ ...carried, ...resolved }, displayOrder));
     setOrderedIds([]);
+    settleStyles(movedIds);
 
     await wait(GameConfig.duration.partialCorrectSettle);
 
@@ -366,15 +397,15 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className={`relative flex flex-col min-h-screen items-center font-sans ${GameConfig.pageBackgroundColor}`}>
+    <div className={`relative flex flex-1 flex-col items-center font-sans ${GameConfig.pageBackgroundColor}`}>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
 
-      <main className="relative flex w-full max-w-3xl flex-col items-center pt-20 pb-10 min-h-screen">
-        <div className="flex mt-2">
+      <main className="relative flex w-full max-w-3xl flex-col items-center pt-[clamp(8px,3vh,24px)] sm:pt-10 pb-[clamp(4px,1.5vh,12px)] sm:pb-6">
+        <div className="flex mt-[clamp(2px,1vh,8px)] sm:mt-2">
           <TitleCoins coins={TITLE_COINS_STYLES} />
         </div>
 
-        <h2 className="text-xl md:text-2xl mt-3 tracking-wide font-bold">
+        <h2 className="text-xl md:text-2xl mt-[clamp(2px,1vh,12px)] sm:mt-3 tracking-wide font-bold">
           Rank by revenue -{" "}
           <span className={GameConfig.puzzleTextColors.gold}>Gold</span>{" "}
           <span className={GameConfig.puzzleTextColors.silver}>Silver</span>{" "}
@@ -398,6 +429,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           snapIds={snapIds}
           pendingSnapIds={pendingSnapIds}
           snappingIds={snappingIds}
+          popIds={popIds}
           isSubmitting={isSubmitting}
           revealedRanks={revealedRanks}
           resolvedSlots={resolvedSlots}
@@ -409,18 +441,19 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
         <div className="w-full flex justify-center">
           <button
             onClick={() => setNewspaperOpen(true)}
-            className="relative flex items-start gap-2 cursor-pointer hover:opacity-70 transition-opacity"
+            className="relative cursor-pointer hover:opacity-70 transition-opacity"
           >
-            {/* Newsboy illustration */}
+            {/* Newsboy illustration — centered on the gap between the grid tiles */}
             <Image
               src="/newsboy.png"
               alt="Open newspaper"
-              width={84}
-              height={84}
+              width={76}
+              height={76}
+              className="block"
             />
 
-            {/* Speech bubble */}
-            <div className="relative bg-white border-2 border-zinc-800 rounded-2xl px-4 py-2 mt-2">
+            {/* Speech bubble — hangs off to the right of the illustration */}
+            <div className="absolute left-full top-1/2 -translate-y-1/2 ml-1 sm:ml-2 bg-white border-2 border-zinc-800 rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2">
               <div className="absolute -left-2 top-3 w-0 h-0
                               border-t-8 border-t-transparent
                               border-b-8 border-b-transparent
@@ -445,11 +478,11 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           companies={puzzle.companies}
         />
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 mt-[clamp(8px,2.5vh,24px)] sm:mt-6">
           <button
             onClick={handleDeselect}
             disabled={!canDeselect}
-            className={`px-4 py-1.5 rounded-full border text-sm transition-colors ${
+            className={`px-4 py-1.5 rounded-full border text-md transition-colors ${
               canDeselect
                 ? "border-zinc-300 text-black font-bold hover:bg-zinc-100 cursor-pointer"
                 : "border-zinc-200 text-zinc-300 cursor-not-allowed"
@@ -461,7 +494,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className={`px-4 py-1.5 rounded-full border text-sm transition-colors ${
+            className={`px-4 py-1.5 rounded-full border text-md transition-colors ${
               canSubmit
                 ? "border-zinc-300 text-white font-bold cursor-pointer"
                 : "border-zinc-200 text-zinc-300 cursor-not-allowed"

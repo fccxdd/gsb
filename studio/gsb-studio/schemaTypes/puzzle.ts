@@ -1,4 +1,6 @@
 // studio/gsb-studio/schemaTypes/puzzle.ts
+import {RevenueInput} from '../components/RevenueInput'
+
 export default {
   name: 'puzzle',
   title: 'GSB Daily Puzzle',
@@ -8,7 +10,21 @@ export default {
       name: 'date',
       title: 'Puzzle Date',
       type: 'date',
-      validation: (Rule: any) => Rule.required()
+      validation: (Rule: any) =>
+        Rule.required().custom(async (date: string, context: any) => {
+          if (!date) return true
+
+          const {document, getClient} = context
+          const client = getClient({apiVersion: '2023-01-01'})
+          const id = (document._id as string).replace(/^drafts\./, '')
+
+          const existingId = await client.fetch(
+            `*[_type == "puzzle" && date == $date && !(_id in [$draftId, $publishedId])][0]._id`,
+            {date, draftId: `drafts.${id}`, publishedId: id}
+          )
+
+          return existingId ? 'A puzzle for this date already exists' : true
+        })
     },
     {
       name: 'fiscalYear',
@@ -50,8 +66,9 @@ export default {
           },
           {
             name: 'revenue',
-            title: 'Revenue (e.g. $11.3B)',
+            title: 'Revenue (e.g. $11.3b)',
             type: 'string',
+            components: {input: RevenueInput},
             validation: (Rule: any) => Rule.required()
           },
           {

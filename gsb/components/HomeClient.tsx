@@ -2,25 +2,23 @@
 
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Puzzle } from "@/types";
 import Landing from "@/components/Landing";
-import GamePageWrapper from "@/components/GamePageWrapper";
-import SplashScreenNoPuzzle from "@/components/SplashScreenNoPuzzle";
 
 interface HomeClientProps {
   puzzle: Puzzle | null;
 }
 
 export default function HomeClient({ puzzle }: HomeClientProps) {
-  const [started, setStarted] = useState(false);
-  if (!started) {
-    return <Landing onPlay={() => setStarted(true)} />;
-  }
+  const router = useRouter();
 
-  return puzzle ? (
-    <GamePageWrapper puzzle={puzzle} />
-  ) : (
-    <SplashScreenNoPuzzle />
-  );
+  const handlePlay = () => {
+    const today =
+      puzzle?.date ??
+      new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+    router.push(`/puzzles/${today}`);
+  };
+
+  return <Landing onPlay={handlePlay} />;
 }

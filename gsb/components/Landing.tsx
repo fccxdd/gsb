@@ -74,7 +74,15 @@ const FAQS: { question: string; answer: ReactNode }[] = [
   },
   {
     question: "Can I play past puzzles?",
-    answer: "Yes, you can play past puzzles in the archive.",
+    answer: (
+      <p>
+        Yes, you can play past puzzles in the{" "}
+        <Link href="/archive" className="text-[#4C4CDB] hover:underline">
+          archive
+        </Link>
+        .
+      </p>
+    ),
   },
 ];
 
@@ -170,7 +178,7 @@ export default function Landing({ onPlay }: LandingProps) {
   };
 
   return (
-	<div className={`flex flex-col min-h-screen items-center ${GameConfig.pageBackgroundColor} font-lora px-6 py-10`}>
+	<div className={`flex flex-1 flex-col items-center ${GameConfig.pageBackgroundColor} font-lora px-6 py-10`}>
 	  {/* Hero */}
 	  <TitleCoins />
 
@@ -225,8 +233,9 @@ export default function Landing({ onPlay }: LandingProps) {
 			{[
 			  "Select the companies you think generated the most revenue from highest to lowest (Gold Silver Bronze).",
 			  "Read the Headlines from that year to get a glimpse of the industry at that time.",
-			  "You have 3 chances to solve the puzzle.",
-			  "Tap Submit to check if you\u2019re correct.",
+			  "Tap 'Submit' to check if you\u2019re correct.",
+			  "You have 3 chances to solve the puzzle."
+
 			].map((step, i) => (
 			  <li key={i} className="flex items-start gap-3">
 				<span

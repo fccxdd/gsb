@@ -46,8 +46,8 @@ function Section({
 export default function PrivacyPage() {
 
   return (
-    <div className={`flex flex-col min-h-screen items-center ${GameConfig.pageBackgroundColor} font-lora`}>
-      <main className={`flex w-full max-w-3xl flex-col items-center px-8 pt-20 pb-16 ${GameConfig.pageBackgroundColor} min-h-screen`}>
+    <div className={`flex flex-1 flex-col items-center ${GameConfig.pageBackgroundColor} font-lora`}>
+      <main className={`flex w-full max-w-3xl flex-col items-center px-8 pt-20 pb-16 ${GameConfig.pageBackgroundColor}`}>
         <h1 className="font-lora text-4xl font-bold text-black tracking-tight mb-2 text-center">
           Privacy Policy
         </h1>

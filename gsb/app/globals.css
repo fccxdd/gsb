@@ -3,6 +3,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,6 +13,10 @@
   --font-luckiest: var(--font-luckiest);
   --font-gaegu: var(--font-gaegu);
   --font-lora: var(--font-lora);
+}
+
+html, body {
+  overflow-x: hidden;
 }
 
 body {
@@ -73,6 +78,10 @@ body {
 
 .tile-pop {
   animation: tilePop 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tile-pop-loss {
+  animation: tilePop 550ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .tile-depop {

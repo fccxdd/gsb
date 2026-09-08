@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GameConfig } from "@/lib/gameConfig";
-import { Medal } from "@/components/Medal";
+import TitleCoins from "@/components/TitleCoins";
 
 const TILES = [
   { color: GameConfig.puzzleBackgroundHex.gold,   startSlot: 2, endSlot: 0, logo: "/splash/tech.png" },
@@ -31,9 +31,10 @@ function slide(el: HTMLElement, x: number, y: number, dur: number, ease = "cubic
 
 interface SplashScreenNoPuzzleProps {
   onDone?: () => void;
+  heading?: string;
 }
 
-export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzleProps) {
+export default function SplashScreenNoPuzzle({ onDone, heading = "No new puzzle today" }: SplashScreenNoPuzzleProps) {
   const router = useRouter();
   const tileRefs = useRef<(HTMLDivElement | null)[]>([null, null, null, null]);
   const [showModal, setShowModal] = useState(false);
@@ -220,28 +221,24 @@ export default function SplashScreenNoPuzzle({ onDone }: SplashScreenNoPuzzlePro
               textAlign: "center",
             }}
           >
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 18 }}>
-              {(["gold", "silver", "bronze"] as const).map((tier) => (
-                <div
-                  key={tier}
-                  style={{ transform: "scale(0.5)", transformOrigin: "center", margin: "-18px" }}
-                >
-                  <Medal status={tier} shine={false} ribbon={false} />
-                </div>
-              ))}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
+              <div className="scale-[0.85] -m-4 md:scale-[0.7] md:-m-6" style={{ transformOrigin: "center" }}>
+                <TitleCoins />
+              </div>
             </div>
 
-            <h2 style={{ fontSize: 30, fontWeight: 600, margin: "0 0 8px" }}>
-              No new puzzle today
+            <h2 className="font-lora" style={{ fontSize: 30, fontWeight: 600, margin: "0 0 8px" }}>
+              {heading}
             </h2>
-            <p style={{ fontSize: 25, color: "#666", margin: "0 0 20px", lineHeight: 1.5 }}>
+            <p className="font-lora" style={{ fontSize: 25, color: "#666", margin: "0 0 20px", lineHeight: 1.5 }}>
               Puzzles are on{" "}
-              <strong style={{ whiteSpace: "nowrap" }}>M / W / F</strong>.<br />
+              <strong style={{ whiteSpace: "nowrap", color: "#4C4CDB" }}>M / W / F</strong>.<br />
               Play the archive!
             </p>
 
             <button
               onClick={handleArchive}
+              className="font-lora"
               style={{
                 width: "100%",
                 padding: "12px 0",

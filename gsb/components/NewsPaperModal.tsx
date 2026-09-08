@@ -35,6 +35,16 @@ export default function NewspaperModal({ isOpen, onClose, companies }: Newspaper
     return () => window.removeEventListener("resize", measure);
   }, [isOpen]);
 
+  // Lock background scroll while the modal is open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -142,7 +152,7 @@ return (
     )}
 
     <div
-      className="relative w-full max-w-3xl mx-4 sm:mx-16 rounded-lg overflow-hidden touch-pan-y"
+      className="relative w-full max-w-3xl mx-2 sm:mx-16 rounded-lg overflow-hidden touch-pan-y"
       onClick={(e) => e.stopPropagation()}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -173,8 +183,8 @@ return (
 
       {/* Image track — prev/current/next sit side by side and slide together,
           so the next or previous clipping peeks in as you drag. */}
-      <div ref={trackRef} className="relative flex justify-center px-4 pb-2 overflow-hidden">
-        <div className="relative w-full flex justify-center" style={{ maxHeight: "72vh" }}>
+      <div ref={trackRef} className="relative flex justify-center px-2 sm:px-4 pb-2 overflow-hidden">
+        <div className="relative w-full flex justify-center" style={{ maxHeight: "80vh" }}>
           {/* Spacer to preserve layout height based on the current image's aspect ratio */}
           <Image
             src={current_company.newspaperClipping}
@@ -182,7 +192,7 @@ return (
             width={1080}
             height={1310}
             aria-hidden
-            className="h-auto w-auto max-w-full max-h-[72vh] invisible"
+            className="h-auto w-auto max-w-full max-h-[80vh] invisible"
           />
 
           {companies.length > 1 && (

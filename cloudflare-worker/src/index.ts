@@ -25,9 +25,9 @@ export default {
     })
 
     if (res.ok) {
-      console.log('✅ Deploy hook triggered successfully')
+      console.log('Deploy hook triggered successfully')
     } else {
-      console.error(`❌ Deploy hook failed: ${res.status} ${res.statusText}`)
+      console.error(`Deploy hook failed: ${res.status} ${res.statusText}`)
     }
   },
 } satisfies ExportedHandler<Env>

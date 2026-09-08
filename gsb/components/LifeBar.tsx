@@ -45,7 +45,7 @@ export default function LifeBar({ lives }: LifeBarProps) {
   const activeStyle = coinStyles[lives];
 
   return (
-    <div className="flex gap-3 items-center justify-center mt-4">
+    <div className="flex gap-3 items-center justify-center mt-[clamp(6px,1.5vh,16px)] sm:mt-4">
       {Array.from({ length: GameConfig.maxLives }).map((_, i) => {
         const isFilled = i < lives;
         const isLost = i === lives && animating;

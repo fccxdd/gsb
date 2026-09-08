@@ -7,7 +7,6 @@ export type Company = {
   newspaperClipping: string;
   revenue: string;
   correctRank: 1 | 2 | 3 | 4;
-  headlines: string[];
 }
 
 export type Puzzle = {
