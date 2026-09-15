@@ -232,7 +232,7 @@ export default function SplashScreenNoPuzzle({ onDone, heading = "No new puzzle 
             </h2>
             <p className="font-lora" style={{ fontSize: 25, color: "#666", margin: "0 0 20px", lineHeight: 1.5 }}>
               Puzzles are on{" "}
-              <strong style={{ whiteSpace: "nowrap", color: "#4C4CDB" }}>M / W / F</strong>.<br />
+              <strong style={{ whiteSpace: "nowrap", color: "#4C4CDB" }}>M / W / F</strong><br />
               Play the archive!
             </p>
 

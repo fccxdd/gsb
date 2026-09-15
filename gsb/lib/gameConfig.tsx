@@ -27,7 +27,7 @@ export const GameConfig = {
             shakeAnimation: 1200,           // how long incorrect tiles shake
             slidePerTile: 700,              // gap between each tile sliding on game over
             revealOrder: [4, 3, 2, 1],      // reveal sequence: 4th → bronze → silver → gold
-            revealSteps: [500, 700, 950, 1400], // pause before each reveal — ramps up for suspense
+            revealSteps: [700, 700, 700, 700], // pause before each reveal — even pacing
             successModalDelay: 600,         // wait after reveals before showing modal
             partialCorrectSettle: 500,      // extra buffer after partial correct slides finish
             lossPopDelay: 400,              // pause before popping the wrong tiles on loss
@@ -92,8 +92,11 @@ export const GameConfig = {
   
   newsPaperTextColor: 'text-[#000000]',
   newsPaperBackgroundColor: 'bg-[#000000]',  
-  newsPaperText: "Read the Headlines",
-
+  newsPaperText: {
+    default:"Read the\nHeadlines",
+    win: "Well done!",
+    loss: "Better luck next time!"
+  },
   purpleColor: "#4C4CDB",
   ribbonColor: "#7386FF",
 
