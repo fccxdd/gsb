@@ -9,10 +9,9 @@ import type { ArchivePuzzle } from "@/lib/archiveSanity";
 
 interface ArchiveClientProps {
   puzzles: ArchivePuzzle[];
-  today: string;
 }
 
-export default function ArchiveClient({ puzzles, today }: ArchiveClientProps) {
+export default function ArchiveClient({ puzzles }: ArchiveClientProps) {
 
   return (
     <div className={`flex flex-1 flex-col items-center font-sans ${GameConfig.pageBackgroundColor}`}>
@@ -33,7 +32,7 @@ export default function ArchiveClient({ puzzles, today }: ArchiveClientProps) {
         </div>
 
         {/* ArchiveGrid is a client component — reads localStorage for medal status */}
-        <ArchiveGrid puzzles={puzzles} today={today} />
+        <ArchiveGrid puzzles={puzzles} />
       </main>
     </div>
   );

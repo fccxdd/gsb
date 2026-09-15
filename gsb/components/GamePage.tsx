@@ -4,6 +4,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { IoHomeOutline, IoHelpCircleOutline } from "react-icons/io5";
 import { GameConfig } from "@/lib/gameConfig";
 import PuzzleGrid from "@/components/PuzzleGrid";
 import NewspaperModal from "@/components/NewsPaperModal";
@@ -11,6 +13,7 @@ import SplashScreen from "@/components/SplashScreen";
 import LifeBar from "@/components/LifeBar";
 import ShareButton from "@/components/ShareButton";
 import GameOverModal from "@/components/GameOverModal";
+import HowToPlayModal from "@/components/HowToPlayModal";
 import { saveGameState, loadGameState } from "@/lib/gameStorage";
 import type { Puzzle } from "@/types";
 import TitleCoins, {TITLE_COINS_STYLES} from "@/components/TitleCoins";
@@ -23,20 +26,6 @@ function wait(ms: number) {
   return new Promise<void>((r) => setTimeout(r, ms));
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function loadSavedState(puzzleDate: string) {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem("gsb_game_state");
-    if (!raw) return null;
-    const state = JSON.parse(raw);
-    return state.date === puzzleDate ? state : null;
-  } catch {
-    return null;
-  }
-}
-
 // Given the current visual positions of non-snapped tiles and a list of
 // correct tiles (ranks 1-3 only), work out the final slot for every tile.
 // Correct tiles claim their exact target slot; whoever's left fills the gaps
@@ -47,12 +36,16 @@ function resolveSwaps(
   rankToSlot: Record<number, number>,  // correctRank -> target slot
   getCompany: (id: number) => { correctRank: number },
 ): Record<number, number> {
-  const correctSet = new Set(correctIds);
+  // Only ids actually present in this round's pool can claim a slot — guards
+  // against a stale/leaked id ever producing a slot collision or a tile that
+  // drops out of the grid entirely.
+  const validCorrectIds = correctIds.filter((id) => visualSlots[id] !== undefined);
+  const correctSet = new Set(validCorrectIds);
 
   // Correct tiles go straight to their rank's slot.
   const result: Record<number, number> = {};
   const claimedSlots = new Set<number>();
-  correctIds.forEach((id) => {
+  validCorrectIds.forEach((id) => {
     const target = rankToSlot[getCompany(id).correctRank];
     result[id] = target;
     claimedSlots.add(target);
@@ -71,7 +64,9 @@ function resolveSwaps(
     .sort((a, b) => a - b);
 
   leftoverIds.forEach((id, i) => {
-    result[id] = availableForLeftovers[i];
+    // Better a tile that doesn't move than one assigned `undefined` and
+    // dropped from the grid.
+    result[id] = availableForLeftovers[i] !== undefined ? availableForLeftovers[i] : visualSlots[id];
   });
 
   return result;
@@ -126,6 +121,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   const [successOpen,   setSuccessOpen]   = useState<boolean>(() => saved?.hasWon         ?? false);
   const [lossOpen,      setLossOpen]      = useState<boolean>(() => (saved?.gameOver && !saved?.hasWon) ?? false);
   const [newspaperOpen, setNewspaperOpen] = useState(false);
+  const [howToPlayOpen, setHowToPlayOpen] = useState(false);
   
   // resolvedSlots drives both the animation and the post-animation state update.
   // It's set before the animation starts and cleared after styles are wiped.
@@ -137,11 +133,11 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   
   // Tiles actively animating TO their correct slot (gets rank color during animation).
   // Displaced bystander tiles are in resolvedSlots but NOT here, so they stay white.
-  const [snappingIds,    setSnappingIds]    = useState<number[]>([]);
+  const [snappingIds, setSnappingIds] = useState<number[]>([]);
 
   // Wrong tiles get a brief pop-in flourish on a loss, right before they slide
   // to their correct slot.
-  const [popIds,         setPopIds]         = useState<number[]>([]);
+  const [popIds, setPopIds] = useState<number[]>([]);
 
   const clearStylesRef = useRef<((ids: number[]) => void) | null>(null);
 
@@ -198,14 +194,37 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     [puzzle.companies],
   );
 
-  // Reveal ranks one by one with a stagger, lowest revenue first (bronze →
-  // silver → gold). 4th place is always last — its revenue is only ever
-  // shown once every tile (including 4th) is actually snapped, i.e. on a win.
+  // Reverse lookup for the staggered loss reveal below, which walks ranks
+  // rather than ids.
+  const getCompanyIdByRank = useCallback(
+    (rank: number) => puzzle.companies.find((c) => c.correctRank === rank)!.id,
+    [puzzle.companies],
+  );
+
+  // Reveal every rank in order: 4th first (invisible until this runs, since
+  // PuzzleGrid never shows rank 4 outside this sequence), then bronze,
+  // silver, gold last, with each pause a bit longer than the last so gold
+  // feels earned. Used by the WIN path, which always reveals all four at
+  // once. The loss path has its own staggered version below because it also
+  // needs to skip already-revealed ranks and stagger the tile color, not
+  // just the revenue.
   async function revealRanks() {
-    for (const rank of [3, 2, 1, 4]) {
-      await wait(GameConfig.duration.revealPerRank);
-      setRevealedRanks((prev) => prev.includes(rank) ? prev : [...prev, rank]);
+    const order = GameConfig.duration.revealOrder;
+    const steps = GameConfig.duration.revealSteps;
+    for (let i = 0; i < order.length; i++) {
+      await wait(steps[i]);
+      const rank = order[i];
+      setRevealedRanks((prev) => (prev.includes(rank) ? prev : [...prev, rank]));
     }
+  }
+
+  // The JS reveal loop resolves the instant the last rank is added to state,
+  // but that tile's revenue badge still has to run its own CSS fade
+  // (revenueFadeDelay, then revenueFadeIn) before it's actually visible.
+  // Callers that pop a modal right after a reveal sequence should wait this
+  // out first, or the modal shows up while the last badge is still fading in.
+  async function waitForRevealSettle() {
+    await wait(GameConfig.duration.revenueFadeDelay + GameConfig.duration.revenueFadeIn);
   }
 
   // Animate tiles to their resolved positions. Returns the ids that actually
@@ -248,7 +267,10 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     const resolved = resolveSwaps(currentVisual, unsolvedIds, RANK_TO_SLOT, getCompany);
 
     setGameOver(true);
-    setRevealedRanks([]);
+    // Deliberately NOT resetting revealedRanks here. Any tile the player
+    // already got right mid-game is already snapped and revealed — it should
+    // keep showing its revenue straight through the loss sequence rather
+    // than flash hidden and then get re-revealed with everyone else.
 
     // Give the player a beat to see the board, then pop the wrong tiles
     // individually, one after another, before sliding them home.
@@ -261,14 +283,31 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     setPopIds([]);
     await wait(GameConfig.duration.lossPopToSlideDelay);
 
-    const movedIds = await animateAndSettle(resolved, unsolvedIds);
+    // Slide the wrong tiles home as white/displaced — color and revenue are
+    // applied afterward, staggered per tile below, not the moment the slide starts.
+    const movedIds = await animateAndSettle(resolved, []);
 
     const finalPos = lockRemaining({ ...visualPos }, displayOrder);
     unsolvedIds.forEach((id) => { finalPos[id] = RANK_TO_SLOT[getCompany(id).correctRank]; });
     setVisualPos(finalPos);
-    setSnapIds(puzzle.companies.map((c) => c.id));
     settleStyles(movedIds);
-    await revealRanks();
+
+    // Snap + reveal the remaining tiles one at a time, lowest revenue (4th)
+    // to highest (gold) — skipping any rank already revealed from a mid-game
+    // correct guess — so neither the color nor the revenue pops in for every
+    // remaining tile all at once.
+    const remainingOrder = GameConfig.duration.revealOrder.filter((r) => !revealedRanks.includes(r));
+    const steps = GameConfig.duration.revealSteps;
+
+    for (let i = 0; i < remainingOrder.length; i++) {
+      await wait(steps[i]);
+      const rank = remainingOrder[i];
+      const id = getCompanyIdByRank(rank);
+      setSnapIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+      setRevealedRanks((prev) => (prev.includes(rank) ? prev : [...prev, rank]));
+    }
+
+    await waitForRevealSettle();
     setLossOpen(true);
   }
 
@@ -299,9 +338,9 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   async function runWin() {
     setGameOver(true);
     setHasWon(true);
-    // Wipe any mid-game reveals the moment we win, otherwise a tile can flash
-    // its revenue for a frame before the proper reveal animation runs.
-    setRevealedRanks([]);
+    // Don't reset revealedRanks — any tile already correctly guessed mid-game
+    // is already snapped and showing its revenue; keep it that way instead of
+    // hiding and re-revealing it here.
 
     const resolved = resolveSwaps(buildVisualSlots(displayOrder, snapIds), orderedIds, RANK_TO_SLOT, getCompany);
     const movedIds = await animateAndSettle(resolved, orderedIds);
@@ -312,7 +351,19 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     setSnapIds(puzzle.companies.map((c) => c.id));
     settleStyles(movedIds);
 
-    await revealRanks();
+    // Reveal only the ranks not already revealed from a mid-game correct guess
+    // — lowest to highest, staggered, same suspense ramp as the loss path.
+    // On a typical win this is just rank 4, since 1-3 are usually already
+    // revealed by the time the player locks in the last correct pick.
+    const remainingOrder = GameConfig.duration.revealOrder.filter((r) => !revealedRanks.includes(r));
+    const steps = GameConfig.duration.revealSteps;
+    for (let i = 0; i < remainingOrder.length; i++) {
+      await wait(steps[i]);
+      const rank = remainingOrder[i];
+      setRevealedRanks((prev) => (prev.includes(rank) ? prev : [...prev, rank]));
+    }
+
+    await waitForRevealSettle();
     await wait(GameConfig.duration.successModalDelay);
     setSuccessOpen(true);
   }
@@ -324,7 +375,14 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     setIncorrectIds(wrong);
     await wait(GameConfig.duration.shakeAnimation);
     setIncorrectIds([]);
-    setOrderedIds((prev) => prev.filter((id) => !wrong.includes(id)));
+
+    // Every id in this guess — right or wrong — has now been evaluated, so
+    // none of them should carry over as "selected" into the next round. A
+    // correct-but-unsnapped 4th-place pick used to survive a wrong/right-only
+    // filter here, leak into the next guess, and corrupt both the rank
+    // coloring (it would render as a stray, deselectable gold tile) and
+    // gradeGuess's slot alignment on the following round.
+    setOrderedIds([]);
 
     // A correct 4th-place tile doesn't snap or reveal mid-game, but it can still
     // get shoved around if another tile needs its slot.
@@ -353,7 +411,6 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
 
     const finalSnapIds = [...snapIds, ...correctNonFourth];
     setVisualPos(lockRemaining({ ...carried, ...resolved }, displayOrder));
-    setOrderedIds([]);
     settleStyles(movedIds);
 
     await wait(GameConfig.duration.partialCorrectSettle);
@@ -364,7 +421,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     setSnapIds(finalSnapIds);
     correctNonFourth.forEach((id) => {
       const rank = getCompany(id).correctRank;
-      setRevealedRanks((prev) => prev.includes(rank) ? prev : [...prev, rank]);
+      setRevealedRanks((prev) => (prev.includes(rank) ? prev : [...prev, rank]));
     });
 
     return finalSnapIds;
@@ -399,6 +456,26 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   return (
     <div className={`relative flex flex-1 flex-col items-center font-sans ${GameConfig.pageBackgroundColor}`}>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+
+      <div className="absolute top-4 left-4 z-10">
+        <Link
+          href="/"
+          aria-label="Home"
+          className="flex items-center justify-center w-9 h-9 rounded-full text-zinc-500 hover:text-zinc-800 hover:bg-black/5 transition-colors cursor-pointer"
+        >
+          <IoHomeOutline className="text-3xl" />
+        </Link>
+      </div>
+
+      <div className="absolute top-4 right-4 z-10">
+        <button
+          onClick={() => setHowToPlayOpen(true)}
+          aria-label="How to play"
+          className="flex items-center justify-center w-9 h-9 rounded-full text-zinc-500 hover:text-zinc-800 hover:bg-black/5 transition-colors cursor-pointer"
+        >
+          <IoHelpCircleOutline className="text-4xl" />
+        </button>
+      </div>
 
       <main className="relative flex w-full max-w-3xl flex-col items-center pt-[clamp(8px,3vh,24px)] sm:pt-10 pb-[clamp(4px,1.5vh,12px)] sm:pb-6">
         <div className="flex mt-[clamp(2px,1vh,8px)] sm:mt-2">
@@ -549,6 +626,8 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           maxLives={GameConfig.maxLives}
         />
       )}
+
+      {howToPlayOpen && <HowToPlayModal onClose={() => setHowToPlayOpen(false)} />}
     </div>
   );
 }

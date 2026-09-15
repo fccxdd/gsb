@@ -7,7 +7,6 @@ import { PastPuzzle } from '@/components/archive/PastPuzzles'
 
 interface ArchiveGridProps {
   puzzles: Puzzle[]
-  today: string
 }
 
 function chunkIntoRows(puzzles: Puzzle[], size = 3): Puzzle[][] {
@@ -56,7 +55,16 @@ function MonthNavButton({
   )
 }
 
-export function ArchiveGrid({ puzzles, today }: ArchiveGridProps) {
+export function ArchiveGrid({ puzzles }: ArchiveGridProps) {
+  // This page is statically exported and only rebuilt on puzzle days, so
+  // the server-computed `today` prop goes stale the very next day (it
+  // would still point at the last puzzle date). Recompute it fresh here
+  // instead, so "today" highlighting stays correct between rebuilds.
+  const today = useMemo(
+    () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }),
+    []
+  )
+
   // Read all localStorage results once on mount
   const statuses = useMemo<Record<string, MedalStatus>>(() => {
     getAllPuzzleResults() // warm the cache

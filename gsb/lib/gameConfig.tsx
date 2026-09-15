@@ -22,30 +22,31 @@ export const GameConfig = {
 
   // Game Timing (in ms)
   duration: {
-              // Game Play (used in GamePage.tsx)
-              delayAfterSubmission: 800,      // wait before evaluating a guess
-              shakeAnimation: 1200,           // how long incorrect tiles shake
-              slidePerTile: 700,              // gap between each tile sliding on game over
-              revealPerRank: 400,             // gap between each revenue reveal
-              successModalDelay: 600,         // wait after reveals before showing modal
-              partialCorrectSettle: 500,      // extra buffer after partial correct slides finish
-              lossPopDelay: 400,              // pause before popping the wrong tiles on loss
-              lossPopStagger: 150,            // gap between each wrong tile's individual pop-in
-              lossPop: 550,                   // how long the (slow) pop-in plays, matches .tile-pop-loss
-              lossPopToSlideDelay: 1000,       // pause after the pop-in before the tiles slide home
+            // Game Play (used in GamePage.tsx)
+            delayAfterSubmission: 800,      // wait before evaluating a guess
+            shakeAnimation: 1200,           // how long incorrect tiles shake
+            slidePerTile: 700,              // gap between each tile sliding on game over
+            revealOrder: [4, 3, 2, 1],      // reveal sequence: 4th → bronze → silver → gold
+            revealSteps: [500, 700, 950, 1400], // pause before each reveal — ramps up for suspense
+            successModalDelay: 600,         // wait after reveals before showing modal
+            partialCorrectSettle: 500,      // extra buffer after partial correct slides finish
+            lossPopDelay: 400,              // pause before popping the wrong tiles on loss
+            lossPopStagger: 150,            // gap between each wrong tile's individual pop-in
+            lossPop: 550,                   // how long the (slow) pop-in plays, matches .tile-pop-loss
+            lossPopToSlideDelay: 1000,       // pause after the pop-in before the tiles slide home
 
-              // PuzzleGrid / useTileAnimation
-              tileSlide: 1200,                 // how long a single tile takes to slide to its slot
+            // PuzzleGrid / useTileAnimation
+            tileSlide: 1200,                 // how long a single tile takes to slide to its slot
 
-              // PuzzleGrid (revenue reveal)
-              revenueLogoSlide: 700,          // logo slides left on reveal
-              revenueFadeIn: 700,             // revenue number fades in
-              revenueFadeDelay: 300,          // delay before revenue fades in
+            // PuzzleGrid (revenue reveal)
+            revenueLogoSlide: 700,          // logo slides left on reveal
+            revenueFadeIn: 700,             // revenue number fades in
+            revenueFadeDelay: 300,          // delay before revenue fades in
 
-              // Loading
-              loadingDelay: 800,
-            },
-  
+            // Loading
+            loadingDelay: 800,
+          },
+    
   // Messages
   messages: {
     alreadyGuessed: "Already guessed"
@@ -93,7 +94,6 @@ export const GameConfig = {
   newsPaperBackgroundColor: 'bg-[#000000]',  
   newsPaperText: "Read the Headlines",
 
-  revenueRevealColor: "#2F8F22",
   purpleColor: "#4C4CDB",
   ribbonColor: "#7386FF",
 
