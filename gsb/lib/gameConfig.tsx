@@ -4,7 +4,7 @@ export const GameConfig = {
   
   // SEO Metadata
   titleName: "GSB | Play",
-  gsbEmail: "playgsb1@gmail.com",
+  gsbEmail: "info@playgsb.com",
   description: "Play GSB - The trivia game where players rank 4 different companies based on revenue.",
   url: "https://playgsb.com",
   imageURL: "https://playgsb.com/gsb-preview.png",
