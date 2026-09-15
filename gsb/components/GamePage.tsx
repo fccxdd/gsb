@@ -121,6 +121,10 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   const [successOpen,   setSuccessOpen]   = useState<boolean>(() => saved?.hasWon         ?? false);
   const [lossOpen,      setLossOpen]      = useState<boolean>(() => (saved?.gameOver && !saved?.hasWon) ?? false);
   const [newspaperOpen, setNewspaperOpen] = useState(false);
+  const [newspaperMessage, setNewspaperMessage] = useState(() => {
+    if (!saved?.gameOver) return GameConfig.newsPaperText.default;
+    return saved?.hasWon ? GameConfig.newsPaperText.win : GameConfig.newsPaperText.loss;
+  });
   const [howToPlayOpen, setHowToPlayOpen] = useState(false);
   
   // resolvedSlots drives both the animation and the post-animation state update.
@@ -234,11 +238,21 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   // still the old one (which caused a one-frame flash/snap-back).
   // correctIds: the tiles actually snapping into place (get rank color during animation).
   // Displaced bystanders are in `resolved` but not in correctIds — they stay white.
-  async function animateAndSettle(resolved: Record<number, number>, correctIds: number[]) {
+  // baseDisplayOrder defaults to the component's current displayOrder, but
+  // callers that already have a fresher {id, slot} snapshot than what's in
+  // React state right now (see autoSolve) can pass it explicitly — needed
+  // because state updates made earlier in the SAME async handler haven't
+  // re-rendered yet, so the component's own displayOrder can be one step
+  // behind at this point in the chain.
+  async function animateAndSettle(
+    resolved: Record<number, number>,
+    correctIds: number[],
+    baseDisplayOrder: { id: number; slot: number }[] = displayOrder,
+  ) {
     setSnappingIds(correctIds);
     setResolvedSlots(resolved);
     await wait(GameConfig.duration.tileSlide);
-    return displayOrder
+    return baseDisplayOrder
       .filter((e) => resolved[e.id] !== undefined && resolved[e.id] !== e.slot)
       .map((e) => e.id);
   }
@@ -258,12 +272,32 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   }
 
   // Used when the player loses — solve the board automatically.
-  async function autoSolve(currentSnapIds: number[]) {
+  //
+  // Takes currentSnapIds/currentPositions as explicit params rather than
+  // reading the visualPos/displayOrder React state directly. This matters
+  // because when a loss happens on the same guess as a correct partial
+  // match, autoSolve runs immediately after runWrongGuess's setVisualPos —
+  // still within the same handleSubmit call, before React has re-rendered.
+  // The component's visualPos/displayOrder at that point still reflect the
+  // PREVIOUS round, not the correct positions runWrongGuess just computed.
+  // Reading them directly caused a real bug: a tile that had just been
+  // correctly snapped this round kept its stale old slot instead of its
+  // real rank slot, which could collide with an unsolved tile being forced
+  // onto that same slot moments later — producing a duplicated/missing tile.
+  async function autoSolve(currentSnapIds: number[], currentPositions: Record<number, number>) {
     const unsolvedIds = puzzle.companies
       .map((c) => c.id)
       .filter((id) => !currentSnapIds.includes(id));
 
-    const currentVisual = buildVisualSlots(displayOrder, currentSnapIds);
+    // An accurate {id, slot} snapshot built from the positions the caller
+    // just computed, not from the component's (possibly one-render-stale)
+    // displayOrder.
+    const currentDisplayOrder = Object.entries(currentPositions).map(([id, slot]) => ({
+      id: Number(id),
+      slot,
+    }));
+
+    const currentVisual = buildVisualSlots(currentDisplayOrder, currentSnapIds);
     const resolved = resolveSwaps(currentVisual, unsolvedIds, RANK_TO_SLOT, getCompany);
 
     setGameOver(true);
@@ -275,6 +309,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     // Give the player a beat to see the board, then pop the wrong tiles
     // individually, one after another, before sliding them home.
     await wait(GameConfig.duration.lossPopDelay);
+    setNewspaperMessage(GameConfig.newsPaperText.loss);
     for (const id of unsolvedIds) {
       setPopIds((prev) => [...prev, id]);
       await wait(GameConfig.duration.lossPopStagger);
@@ -285,9 +320,12 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
 
     // Slide the wrong tiles home as white/displaced — color and revenue are
     // applied afterward, staggered per tile below, not the moment the slide starts.
-    const movedIds = await animateAndSettle(resolved, []);
+    const movedIds = await animateAndSettle(resolved, [], currentDisplayOrder);
 
-    const finalPos = lockRemaining({ ...visualPos }, displayOrder);
+    // Start from the accurate positions passed in: the already-correct tiles
+    // keep the real rank slot they were just placed at (not a stale one),
+    // and only the still-unsolved tiles get force-placed onto their slot.
+    const finalPos = { ...currentPositions };
     unsolvedIds.forEach((id) => { finalPos[id] = RANK_TO_SLOT[getCompany(id).correctRank]; });
     setVisualPos(finalPos);
     settleStyles(movedIds);
@@ -357,6 +395,9 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     // revealed by the time the player locks in the last correct pick.
     const remainingOrder = GameConfig.duration.revealOrder.filter((r) => !revealedRanks.includes(r));
     const steps = GameConfig.duration.revealSteps;
+
+    setNewspaperMessage(GameConfig.newsPaperText.win);
+
     for (let i = 0; i < remainingOrder.length; i++) {
       await wait(steps[i]);
       const rank = remainingOrder[i];
@@ -369,9 +410,14 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
   }
 
   // Wrong guess: shake the bad tiles, snap any partial-correct ones into place,
-  // and pin the rest. Returns who's snapped afterwards so the caller can check
-  // for a loss.
-  async function runWrongGuess(wrong: number[], correct: number[]): Promise<number[]> {
+  // and pin the rest. Returns who's snapped and where everyone actually ended
+  // up, so the caller (handleSubmit) can pass the real, up-to-date positions
+  // into autoSolve on a loss instead of letting it read React state that
+  // hasn't re-rendered yet.
+  async function runWrongGuess(
+    wrong: number[],
+    correct: number[],
+  ): Promise<{ finalSnapIds: number[]; finalPositions: Record<number, number> }> {
     setIncorrectIds(wrong);
     await wait(GameConfig.duration.shakeAnimation);
     setIncorrectIds([]);
@@ -380,8 +426,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     // none of them should carry over as "selected" into the next round. A
     // correct-but-unsnapped 4th-place pick used to survive a wrong/right-only
     // filter here, leak into the next guess, and corrupt both the rank
-    // coloring (it would render as a stray, deselectable gold tile) and
-    // gradeGuess's slot alignment on the following round.
+    // coloring and gradeGuess's slot alignment on the following round.
     setOrderedIds([]);
 
     // A correct 4th-place tile doesn't snap or reveal mid-game, but it can still
@@ -396,8 +441,9 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
 
     // Nothing to snap — just pin the loose tiles and report no change.
     if (correctNonFourth.length === 0) {
-      setVisualPos(lockRemaining(carried, displayOrder));
-      return snapIds;
+      const pinned = lockRemaining(carried, displayOrder);
+      setVisualPos(pinned);
+      return { finalSnapIds: snapIds, finalPositions: pinned };
     }
 
     const resolved = resolveSwaps(buildVisualSlots(displayOrder, snapIds), correctNonFourth, RANK_TO_SLOT, getCompany);
@@ -410,7 +456,8 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     // early makes the color pop in too soon.
 
     const finalSnapIds = [...snapIds, ...correctNonFourth];
-    setVisualPos(lockRemaining({ ...carried, ...resolved }, displayOrder));
+    const merged = lockRemaining({ ...carried, ...resolved }, displayOrder);
+    setVisualPos(merged);
     settleStyles(movedIds);
 
     await wait(GameConfig.duration.partialCorrectSettle);
@@ -424,7 +471,7 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
       setRevealedRanks((prev) => (prev.includes(rank) ? prev : [...prev, rank]));
     });
 
-    return finalSnapIds;
+    return { finalSnapIds, finalPositions: merged };
   }
 
   async function handleSubmit() {
@@ -445,9 +492,9 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
     const newLives = lives - 1;
     setLives(newLives);
 
-    const finalSnapIds = await runWrongGuess(wrong, correct);
+    const { finalSnapIds, finalPositions } = await runWrongGuess(wrong, correct);
 
-    if (newLives === 0) await autoSolve(finalSnapIds);
+    if (newLives === 0) await autoSolve(finalSnapIds, finalPositions);
     setIsSubmitting(false);
   }
 
@@ -482,18 +529,18 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           <TitleCoins coins={TITLE_COINS_STYLES} />
         </div>
 
-        <h2 className="text-xl md:text-2xl mt-[clamp(2px,1vh,12px)] sm:mt-3 tracking-wide font-bold">
+        <h2 className="text-xl font-lora md:text-2xl mt-[clamp(2px,1vh,12px)] sm:mt-3 tracking-wide font-bold">
           Rank by revenue -{" "}
           <span className={GameConfig.puzzleTextColors.gold}>Gold</span>{" "}
           <span className={GameConfig.puzzleTextColors.silver}>Silver</span>{" "}
           <span className={GameConfig.puzzleTextColors.bronze}>Bronze</span>
         </h2>
 
-        <p className="text-2xl md:text-3xl font-bold" style={{ color: GameConfig.purpleColor }}>
+        <p className="text-2xl font-lora md:text-3xl font-bold" style={{ color: GameConfig.purpleColor }}>
           {puzzle.fiscalYear}
         </p>
 
-        <p className="text-lg md:text-xl font-bold italic">
+        <p className="text-lg font-lora md:text-xl font-bold italic">
           {puzzle.revenueRange}
         </p>
 
@@ -511,8 +558,6 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
           revealedRanks={revealedRanks}
           resolvedSlots={resolvedSlots}
           clearStylesRef={clearStylesRef}
-          hasWon={hasWon}
-          gameOver={gameOver}
         />
 
         <div className="w-full flex justify-center">
@@ -540,8 +585,8 @@ export default function GamePage({ puzzle }: { puzzle: Puzzle }) {
                               border-b-7 border-b-transparent
                               border-r-9 border-r-white" />
 
-              <span className="font-gaegu text-lg sm:text-xl text-zinc-800 leading-tight whitespace-nowrap">
-                Read the<br /> Headlines
+              <span className="font-gaegu text-lg sm:text-xl text-zinc-800 leading-tight whitespace-pre-line">
+                {newspaperMessage}
               </span>
             </div>
           </button>

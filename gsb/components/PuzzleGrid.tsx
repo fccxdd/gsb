@@ -29,8 +29,6 @@ interface PuzzleGridProps {
   revealedRanks: number[];
   resolvedSlots: Record<number, number>;
   clearStylesRef: React.MutableRefObject<((ids: number[]) => void) | null>;
-  hasWon: boolean;
-  gameOver: boolean;
 }
 
 export default function PuzzleGrid({
@@ -46,9 +44,7 @@ export default function PuzzleGrid({
   isSubmitting,
   revealedRanks,
   resolvedSlots,
-  clearStylesRef,
-  hasWon,
-  gameOver,
+  clearStylesRef
 }: PuzzleGridProps) {
   const { tileRefs, clearStyles } = useTileAnimation(resolvedSlots, displayOrder);
 
@@ -226,24 +222,11 @@ export default function PuzzleGrid({
                 isRevealed ? "opacity-100" : "opacity-0",
               ].join(" ")}
             >
-              <span className="font-lora font-bold italic text-black text-sm sm:text-base">
+              <span className="font-lora font-bold italic text-black text-xl sm:text-xl">
                 {company.revenue}
               </span>
             </div>
 
-            {/* Medal shine on win */}
-            {hasWon && isSnapped && company.correctRank === 1 && (
-              <span
-                className="medal-shine-overlay"
-                style={{
-                  animationDelay: `${
-                    GameConfig.duration.revealSteps.reduce((sum, ms) => sum + ms, 0) +
-                    GameConfig.duration.revenueFadeIn +
-                    GameConfig.duration.revenueFadeDelay
-                  }ms`,
-                }}
-              />
-            )}
           </button>
         );
       })}
