@@ -7,6 +7,7 @@ import Image from "next/image";
 import { GameConfig } from "@/lib/gameConfig";
 import TitleCoins from "@/components/TitleCoins";
 import Link from "next/link";
+import { HOW_TO_PLAY_STEPS } from "@/lib/howToPlaySteps";
 
 const GRID_TILES = [
   { color: GameConfig.puzzleBackgroundHex.gold,   logo: "/splash/tech.png",          alt: "Tech" },
@@ -180,7 +181,7 @@ export default function Landing({ onPlay }: LandingProps) {
   return (
 	<div className={`flex flex-1 flex-col items-center ${GameConfig.pageBackgroundColor} font-lora px-6 py-10`}>
 	  {/* Hero */}
-	  <TitleCoins />
+	  <TitleCoins sizeClamp="clamp(5.5rem, 10vw, 6.5rem)" />
 
 	  <div className="grid grid-cols-2 gap-3 mt-10" style={{ width: 252 }}>
 		{GRID_TILES.map((tile) => (
@@ -230,13 +231,7 @@ export default function Landing({ onPlay }: LandingProps) {
 
 		<SubSection title="How to Play">
 		  <ul className="flex flex-col gap-3">
-			{[
-			  "Select the companies you think generated the most revenue from highest to lowest (Gold Silver Bronze).",
-			  "Read the Headlines from that year to get a glimpse of the industry at that time.",
-			  "Tap 'Submit' to check if you\u2019re correct.",
-			  "You have 3 chances to solve the puzzle."
-
-			].map((step, i) => (
+			{HOW_TO_PLAY_STEPS.map((step, i) => (
 			  <li key={i} className="flex items-start gap-3">
 				<span
 				  className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-white text-sm font-lora font-bold mt-0.5"

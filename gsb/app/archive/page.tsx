@@ -14,5 +14,5 @@ export default async function ArchivePage() {
   const today = new Date().toISOString().slice(0, 10)
   const puzzles = await getArchivePuzzles(today)
 
-  return <ArchiveClient puzzles={puzzles} today={today} />
+  return <ArchiveClient puzzles={puzzles} />
 }

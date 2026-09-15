@@ -56,15 +56,6 @@ export default function PuzzleGrid({
     clearStylesRef.current = clearStyles;
   });
 
-  useEffect(() => {
-  if (hasWon) {
-    console.log(
-      "companies at win:",
-      companies.map((c) => ({ id: c.id, name: c.name, correctRank: c.correctRank }))
-    );
-  }
-}, [hasWon, companies]);
-
   // Tracks which tiles were "selected" on the previous render so we can fire a
   // one-shot depop animation on the tiles that just flipped selected → unselected.
   const prevSelectedRef = useRef<Set<number>>(new Set());
@@ -153,12 +144,9 @@ export default function PuzzleGrid({
         const isAnimating   = isSnapping || isDisplaced;
         const isIncorrect   = incorrectIds.includes(logo.id);
         const company       = companies.find((c) => c.id === logo.id)!;
-        // Revenue only shows on the final reveal, never mid-game. The true
-        // 4th-place company's revenue is withheld even on a loss (where
-        // auto-solve snaps every tile into place) — it only ever shows once
-        // the player has actually won, i.e. gotten all 4 correct.
-        const isRevealed    = gameOver && isSnapped && revealedRanks.includes(company.correctRank)
-          && (company.correctRank !== 4 || hasWon);
+        
+        // Revenue shows midgame.
+        const isRevealed    = isSnapped && revealedRanks.includes(company.correctRank);
 
         // A tile counts as "selected" once the user has picked it (it holds a
         // rank slot) but before it snaps or animates.
@@ -170,11 +158,12 @@ export default function PuzzleGrid({
         // Color priority: snapped/pending/snapping → correct rank color
         //                 displaced → stay white (don't reveal rank color during animation)
         //                 selected → rank color by slot position (gold=1st pick, silver=2nd, etc.)
+        //                 auto-filled → stays white; it wasn't actually chosen
         //                 default → white
         const bg =
           isSnapped || isPending || isSnapping
             ? RANK_COLORS[company.correctRank]
-            : isColored
+            : isSelected
             ? RANK_COLORS[availableRanks[selectionRank]]
             : "bg-white";
 
@@ -216,7 +205,7 @@ export default function PuzzleGrid({
                 className={[
                   "flex items-center justify-center transition-transform ease-in-out",
                   "w-[65%] h-[65%]",
-                  isRevealed ? "-translate-y-6 sm:-translate-y-8" : "translate-y-0",
+                  isRevealed ? "-translate-y-3 sm:-translate-y-4" : "translate-y-0",
                 ].join(" ")}
               >
                 <div className="relative w-full h-full">
@@ -225,25 +214,19 @@ export default function PuzzleGrid({
               </div>
             </div>
 
-            {/* Revenue badge — fades in after reveal */}
+            {/* Revenue reveal — fades in after reveal */}
             <div
               style={{
                 transitionDuration: `${GameConfig.duration.revenueFadeIn}ms`,
                 transitionDelay: isRevealed ? `${GameConfig.duration.revenueFadeDelay}ms` : "0ms",
               }}
               className={[
-                "absolute bottom-[10%] flex flex-col items-center gap-1",
+                "absolute bottom-[10%] flex items-center justify-center",
                 "transition-opacity ease-in-out",
                 isRevealed ? "opacity-100" : "opacity-0",
               ].join(" ")}
             >
-              <span className="text-[10px] sm:text-xs font-semibold text-black uppercase tracking-wide">
-                Revenue
-              </span>
-              <span
-                className="px-3 py-1 rounded-full text-white text-xs sm:text-sm font-semibold"
-                style={{ backgroundColor: GameConfig.revenueRevealColor }}
-              >
+              <span className="font-lora font-bold italic text-black text-sm sm:text-base">
                 {company.revenue}
               </span>
             </div>
@@ -254,7 +237,7 @@ export default function PuzzleGrid({
                 className="medal-shine-overlay"
                 style={{
                   animationDelay: `${
-                    (company.correctRank - 1) * GameConfig.duration.revealPerRank +
+                    GameConfig.duration.revealSteps.reduce((sum, ms) => sum + ms, 0) +
                     GameConfig.duration.revenueFadeIn +
                     GameConfig.duration.revenueFadeDelay
                   }ms`,
