@@ -86,8 +86,12 @@ export function ArchiveGrid({ puzzles }: ArchiveGridProps) {
   })
 
   const currentMonthKey = availableMonths[monthIndex]
+  // Latest puzzle first within the month ('YYYY-MM-DD' sorts as a string)
   const monthPuzzles = useMemo(
-    () => puzzles.filter(p => monthKey(p.date) === currentMonthKey),
+    () =>
+      puzzles
+        .filter(p => monthKey(p.date) === currentMonthKey)
+        .sort((a, b) => b.date.localeCompare(a.date)),
     [puzzles, currentMonthKey]
   )
 
